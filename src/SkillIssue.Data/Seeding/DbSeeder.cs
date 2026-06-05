@@ -10,73 +10,101 @@ public static class DbSeeder
         if (await db.Repos.AnyAsync())
             return;
 
-        var mathUtil = new Repo
+        var humanizer = new Repo
         {
-            Name = "MathUtil",
-            GitHubUrl = "https://github.com/skill-issue-app/mathutil",
+            Name = "Humanizr/Humanizer",
+            GitHubUrl = "https://github.com/Humanizr/Humanizer",
             Language = "C#",
-            Description = "A .NET utility library for common math operations including prime checking, factorisation, and sequence generation.",
+            Description = "A .NET library for making strings, numbers, dates, times and quantities human-readable. MIT licensed.",
             IsActive = true,
             Bugs =
             [
                 new Bug
                 {
-                    Title = "IsPrime returns true for 1",
-                    Brief = "The IsPrime method incorrectly identifies 1 as a prime number. As a result, GetPrimesUpTo(7) returns [1, 2, 3, 5, 7] instead of [2, 3, 5, 7]. Fix the method so it correctly excludes 1.",
-                    ErrorMessage = "Assert.Equal failed.\nExpected: [2, 3, 5, 7]\nActual:   [1, 2, 3, 5, 7]",
+                    Title = "Pascalize() silently drops digits at word boundaries",
+                    Brief = "\"customer name 1\".Pascalize() returns \"CustomerName\" instead of \"CustomerName1\". The regex pattern that drives Pascalize() and Camelize() only matches ASCII letters as word-start characters, so digits and symbols after a space, underscore, or hyphen are silently discarded. Fix the pattern so every character type is preserved.\n\nFork the repo, find and fix the pattern, then push — the existing Humanizer test suite will verify the result.\n\nSource: Humanizr/Humanizer (MIT) — fix introduced in PR #1684, commit b4286ce.",
+                    ErrorMessage = "Assert.Equal(\"CustomerName1\", \"customer name 1\".Pascalize())\nExpected: CustomerName1\nActual:   CustomerName",
                     Difficulty = Difficulty.Easy,
-                    FailingTests = "MathUtilTests.GetPrimesUpTo_ReturnsCorrectPrimes",
+                    FailingTests = "Humanizer.Tests.InflectorTests.PascalizeTests (InlineData: \"customer name 1\", \"CustomerName1\")",
                     Hints =
                     [
-                        new HintTier { Order = 1, Label = "Nudge", Content = "Focus on the boundary condition at the very start of IsPrime — what values should be rejected before the loop even runs?" },
-                        new HintTier { Order = 2, Label = "Area", Content = "The bug is in MathUtil.cs, inside the IsPrime method. Look at the early-return guard clauses at the top of the method." },
-                        new HintTier { Order = 3, Label = "File & Line", Content = "The guard clause reads `if (n < 2) return false;` — but 1 does not satisfy `n < 2`, so it falls through. Change `< 2` to `<= 1`, or equivalently `< 2` is already correct... wait — 1 < 2 is true! Look again: the condition is likely `if (n <= 1)` missing, or the existing check has a typo using `<` instead of `<=`." }
-                    ]
-                }
-            ]
-        };
-
-        var orderProcessor = new Repo
-        {
-            Name = "OrderProcessor",
-            GitHubUrl = "https://github.com/skill-issue-app/order-processor",
-            Language = "C#",
-            Description = "A C# library that handles e-commerce order totalling, discount rules, and line-item validation.",
-            IsActive = true,
-            Bugs =
-            [
-                new Bug
-                {
-                    Title = "Discount not applied to orders of exactly $500",
-                    Brief = "Orders over $500 should receive a 10% discount. Orders totalling exactly $500 also qualify, but the discount is silently skipped for that exact amount. CalculateTotal on a $500 order returns 500.00 instead of 450.00.",
-                    ErrorMessage = "Assert.Equal(450.00m, order.CalculateTotal()) failed.\nExpected: 450.00\nActual:   500.00",
-                    Difficulty = Difficulty.Medium,
-                    FailingTests = "OrderTests.CalculateTotal_AppliesDiscountForOrdersAtThreshold",
-                    Hints =
-                    [
-                        new HintTier { Order = 1, Label = "Nudge", Content = "The bug is a single-character mistake in a comparison operator. Think about what operator correctly includes the boundary value." },
-                        new HintTier { Order = 2, Label = "Area", Content = "Look at the CalculateTotal method in OrderProcessor.cs. Find the if-statement that decides whether to apply the discount." },
-                        new HintTier { Order = 3, Label = "File & Line", Content = "The condition reads `if (subtotal > 500)`. Change `>` to `>=` so that orders of exactly $500 also receive the discount." }
+                        new HintTier { Order = 1, Label = "Nudge", Content = "Pascalize() works perfectly for letters-only words like \"customer name\". Try it on a string where the last word starts with a digit, like \"customer name 1\". The digit disappears from the output — why might that be?" },
+                        new HintTier { Order = 2, Label = "Area", Content = "Look in src/Humanizer/InflectorExtensions.cs. There is a static constant that stores the regex pattern used by Pascalize and Camelize. What character class does it use to match the first character of each capitalised word?" },
+                        new HintTier { Order = 3, Label = "File & Line", Content = "In InflectorExtensions.cs, the constant PascalizePattern contains a capturing group ([a-zA-Z]). That class matches only ASCII letters — digits and symbols don't match, so they get dropped. Change [a-zA-Z] to . (dot) to match any character." }
                     ]
                 },
                 new Bug
                 {
-                    Title = "Zero-quantity items inflate the order total",
-                    Brief = "When a line item's quantity is set to 0 (e.g. a cancelled item), ProcessOrder still includes it in the subtotal. An order with two zeroed-out $20 items reports a total $40 higher than it should.",
-                    ErrorMessage = "Assert.Equal(100.00m, order.ProcessOrder().Total) failed.\nExpected: 100.00\nActual:   140.00",
-                    Difficulty = Difficulty.Hard,
-                    FailingTests = "OrderTests.ProcessOrder_IgnoresZeroQuantityItems,OrderTests.CalculateTotal_ExcludesZeroQuantityLineItems",
+                    Title = "DateOnly humanization is wrong across year boundaries",
+                    Brief = "DateOnly.FromDateTime(DateTime.Today.AddMonths(-24)).Humanize() returns \"1 year ago\" instead of \"2 years ago\". The algorithm subtracts .DayOfYear values to get the number of days between two dates, but DayOfYear is the day's position within its own year (1–366) — not an absolute day count. Two dates with the same calendar day in different years produce a day difference of 0, collapsing the year calculation.\n\nFork the repo, fix the day-difference calculation, and push.\n\nSource: Humanizr/Humanizer (MIT) — fix introduced in PR #1228, commit b8ace55.",
+                    ErrorMessage = "Assert.Equal(\"2 years ago\", DateOnly.FromDateTime(baseDate.AddMonths(-24)).Humanize(baseDate))\nExpected: 2 years ago\nActual:   1 year ago",
+                    Difficulty = Difficulty.Medium,
+                    FailingTests = "Humanizer.Tests.DateOnlyHumanizeTests.DefaultStrategy_YearsAgo",
                     Hints =
                     [
-                        new HintTier { Order = 1, Label = "Nudge", Content = "The total includes items that should contribute nothing. Look at how the subtotal is accumulated from the collection of line items." },
-                        new HintTier { Order = 2, Label = "Area", Content = "The issue is in OrderProcessor.cs, inside the method that sums line item totals. Look at the LINQ expression that calculates the subtotal." },
-                        new HintTier { Order = 3, Label = "File & Line", Content = "The subtotal is calculated as `items.Sum(i => i.Quantity * i.UnitPrice)`. Add a filter before the Sum: `items.Where(i => i.Quantity > 0).Sum(i => i.Quantity * i.UnitPrice)`." }
+                        new HintTier { Order = 1, Label = "Nudge", Content = "The bug only shows up when the two dates are in different calendar years. Try humanizing a DateOnly that is exactly 24 months ago — the result might say \"1 year ago\". Think about how the number of days between dates is being computed." },
+                        new HintTier { Order = 2, Label = "Area", Content = "Navigate to src/Humanizer/DateTimeHumanizeStrategy/DateTimeHumanizeAlgorithms.cs. Find the overload that accepts two DateOnly arguments. Look at how it computes the variable that represents the number of days between the two dates." },
+                        new HintTier { Order = 3, Label = "File & Line", Content = "The algorithm uses input.DayOfYear and comparisonBase.DayOfYear to compute diffDays and days. DayOfYear resets to 1 each January, so dates with the same month/day in different years give a difference of 0. Replace .DayOfYear with .DayNumber on both sides — DayNumber is a monotonically increasing absolute day count." }
+                    ]
+                },
+                new Bug
+                {
+                    Title = "ToMetric() uses wrong SI prefix when rounding crosses a threshold",
+                    Brief = "999500d.ToMetric(decimals: 0) returns \"1000k\" instead of \"1M\". When the scaled number rounds up to exactly 1000 (e.g. 999.5 rounds to 1000 at the kilo prefix), the method never carries to the next SI prefix. Fix the method to detect this boundary condition and increment the prefix.\n\nFork the repo, add the boundary check, and push.\n\nSource: Humanizr/Humanizer (MIT) — fix introduced in PR #1570, commit 6d7dfda.",
+                    ErrorMessage = "Assert.Equal(\"1M\", 999500d.ToMetric(decimals: 0))\nExpected: 1M\nActual:   1000k",
+                    Difficulty = Difficulty.Medium,
+                    FailingTests = "Humanizer.Tests.MetricNumeralTests.ToMetric (InlineData: \"1M\", 999500d, null, 0)",
+                    Hints =
+                    [
+                        new HintTier { Order = 1, Label = "Nudge", Content = "999500.ToMetric(decimals: 0) chooses the kilo (k) prefix and rounds 999.5 → 1000. But \"1000k\" is not a valid metric representation — \"1M\" is. The method never checks whether rounding caused the number to overflow its chosen prefix. Where in the method should that check go?" },
+                        new HintTier { Order = 2, Label = "Area", Content = "Open src/Humanizer/MetricNumeralExtensions.cs and find the private BuildMetricRepresentation method. After the number has been scaled down to its prefix magnitude, is there any guard that detects when it has grown back to ≥1000?" },
+                        new HintTier { Order = 3, Label = "File & Line", Content = "In BuildMetricRepresentation, after computing number, add: if (Math.Abs(number) >= 1000 && exponent < Symbols[0].Count) { number /= 1000; exponent++; } This carries the rounded value to the next SI prefix before the string is formatted." }
+                    ]
+                },
+                new Bug
+                {
+                    Title = "Titleize() returns empty string for non-ASCII inputs",
+                    Brief = "\"123\".Titleize() returns \"\" instead of \"123\". Titleize() delegates to Humanize(), which in turn calls FromPascalCase(). When the input contains no ASCII letters, FromPascalCase()'s regex finds no matches and returns an empty string — and Titleize() returns that empty string rather than the original input.\n\nFork the repo, fix Titleize() to preserve the original input when humanization produces nothing, and push.\n\nSource: Humanizr/Humanizer (MIT) — fix introduced in PR #1611, commit 535de3f.",
+                    ErrorMessage = "Assert.Equal(\"123\", \"123\".Titleize())\nExpected: 123\nActual:   (empty string)",
+                    Difficulty = Difficulty.Medium,
+                    FailingTests = "Humanizer.Tests.InflectorTests.TitleizeShouldPreserveUnrecognizedCharacters (InlineData: \"123\", \"123\")",
+                    Hints =
+                    [
+                        new HintTier { Order = 1, Label = "Nudge", Content = "\"Pascal Case\".Titleize() works fine, but \"123\".Titleize() returns an empty string. Titleize() is a thin wrapper — trace what it calls internally. At what step does the content get lost?" },
+                        new HintTier { Order = 2, Label = "Area", Content = "In src/Humanizer/InflectorExtensions.cs, Titleize is a one-liner that calls input.Humanize(LetterCasing.Title). Now look in src/Humanizer/StringHumanizeExtensions.cs — what does FromPascalCase return when the input contains no ASCII letters?" },
+                        new HintTier { Order = 3, Label = "File & Line", Content = "Titleize is currently: return input.Humanize(LetterCasing.Title). Expand it to: var humanized = input.Humanize(); return humanized.Length == 0 ? input : humanized.ApplyCase(LetterCasing.Title); This preserves the original input whenever humanization produces an empty result." }
                     ]
                 }
             ]
         };
 
-        db.Repos.AddRange(mathUtil, orderProcessor);
+        var newtonsoftJson = new Repo
+        {
+            Name = "JamesNK/Newtonsoft.Json",
+            GitHubUrl = "https://github.com/JamesNK/Newtonsoft.Json",
+            Language = "C#",
+            Description = "Json.NET — a popular high-performance JSON framework for .NET. MIT licensed.",
+            IsActive = true,
+            Bugs =
+            [
+                new Bug
+                {
+                    Title = "Deserializing TimeOnly 'HH:mm' format throws FormatException",
+                    Brief = "JsonConvert.DeserializeObject<TimeOnly>(\"\\\"23:59\\\"\") throws a FormatException. The deserialization path uses TimeOnly.ParseExact with the format \"HH:mm:ss.FFFFFFF\", which requires seconds and fractional seconds to be present. A time string that omits seconds — a perfectly valid ISO 8601 time — cannot be parsed.\n\nFork the repo, fix the parsing call so it handles all common TimeOnly string formats, and push.\n\nSource: JamesNK/Newtonsoft.Json (MIT) — fix introduced in PR #2811, commit ba92aa9.",
+                    ErrorMessage = "System.FormatException: String '23:59' was not recognized as a valid TimeOnly.\n  at Newtonsoft.Json.Utilities.ConvertUtils.TryConvertInternal(...)",
+                    Difficulty = Difficulty.Easy,
+                    FailingTests = "Newtonsoft.Json.Tests.Serialization.TimeOnlyTests.Deserialize_WithoutSeconds",
+                    Hints =
+                    [
+                        new HintTier { Order = 1, Label = "Nudge", Content = "Deserializing \"23:59:59\" works. Deserializing \"23:59\" (no seconds) throws a FormatException. Both are valid time strings — the difference is the format. Find where the library parses TimeOnly values from strings." },
+                        new HintTier { Order = 2, Label = "Area", Content = "Open Src/Newtonsoft.Json/Utilities/ConvertUtils.cs and search for TimeOnly. You'll find the conversion logic inside TryConvertInternal. Look at which parsing method is used and what format string it expects." },
+                        new HintTier { Order = 3, Label = "File & Line", Content = "The line reads: value = TimeOnly.ParseExact(s, \"HH'\\u003a'mm'\\u003a'ss.FFFFFFF\", CultureInfo.InvariantCulture); ParseExact rejects any string that doesn't exactly match the given format. Replace it with: value = TimeOnly.Parse(s, CultureInfo.InvariantCulture); Parse handles HH:mm, HH:mm:ss, and HH:mm:ss.fffffff all at once." }
+                    ]
+                }
+            ]
+        };
+
+        db.Repos.AddRange(humanizer, newtonsoftJson);
         await db.SaveChangesAsync();
     }
 }

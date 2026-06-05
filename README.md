@@ -84,10 +84,12 @@ Uses SQLite in development (file: `skillissue.db` in the Web project output dire
 
 ## Seed data
 
-Two repos seeded on first run:
+Two repos seeded on first run (real bugs from MIT-licensed open-source libraries):
 
 | Repo | Bug | Difficulty |
 |------|-----|-----------|
-| MathUtil | IsPrime returns true for 1 | Easy |
-| OrderProcessor | Discount not applied to orders of exactly $500 | Medium |
-| OrderProcessor | Zero-quantity items inflate the order total | Hard |
+| Humanizr/Humanizer | Pascalize() silently drops digits at word boundaries | Easy |
+| Humanizr/Humanizer | DateOnly humanization is wrong across year boundaries | Medium |
+| Humanizr/Humanizer | ToMetric() uses wrong SI prefix when rounding crosses a threshold | Medium |
+| Humanizr/Humanizer | Titleize() returns empty string for non-ASCII inputs | Medium |
+| JamesNK/Newtonsoft.Json | Deserializing TimeOnly 'HH:mm' format throws FormatException | Easy |
