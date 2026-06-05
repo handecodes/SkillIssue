@@ -1,0 +1,227 @@
+@page "/challenge/{BugId:int}"
+@rendermode InteractiveServer
+@inject IChallengeService ChallengeService
+@inject IAttemptService AttemptService
+@inject IGitHubVerificationService VerificationService
+
+<PageTitle>@(bug?.Title ?? "Challenge") — Skill Issue</PageTitle>
+
+@if (bug is null)
+{
+    <p class="text-muted">Loading challenge...</p>
+}
+else
+{
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Challenges</a></li>
+            <li class="breadcrumb-item active">@bug.Repo.Name</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <h1 class="mb-0 me-2">@bug.Title</h1>
+        <span class="badge bg-@DifficultyColor(bug.Difficulty) fs-6">@bug.Difficulty</span>
+        <a href="@bug.Repo.GitHubUrl" target="_blank" rel="noopener noreferrer"
+           class="btn btn-sm btn-outline-secondary ms-auto">
+            View repo on GitHub ↗
+        </a>
+    </div>
+
+    <!-- Problem description -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">What's broken</h5>
+            <p class="card-text">@bug.Brief</p>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-7">
+            <div class="card border-danger h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-danger mb-2">Error / failing output</h6>
+                    <pre class="mb-0 small bg-light p-2 rounded">@bug.ErrorMessage</pre>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="card-title mb-2">Failing tests</h6>
+                    @foreach (var test in bug.FailingTests.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        <code class="d-block small mb-1">@test</code>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hints -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="mb-0">Hints</h5>
+                <span class="text-muted small">@revealedCount / @bug.Hints.Count revealed</span>
+            </div>
+            @if (revealedCount == 0)
+            {
+                <p class="text-muted small mb-2">Try to find the bug on your own first. Each hint costs you nothing, but fewer hints = more impressive fix.</p>
+            }
+            @foreach (var hint in bug.Hints.Take(revealedCount))
+            {
+                <div class="alert alert-info py-2 mb-2">
+                    <strong>@hint.Label:</strong> @hint.Content
+                </div>
+            }
+            @if (revealedCount < bug.Hints.Count)
+            {
+                <button class="btn btn-outline-secondary btn-sm" @onclick="RevealHint">
+                    Reveal hint @(revealedCount + 1): @bug.Hints[revealedCount].Label
+                </button>
+            }
+            else
+            {
+                <span class="text-muted small">All hints revealed.</span>
+            }
+        </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Submit your fix</h5>
+
+            <AuthorizeView>
+                <Authorized>
+                    <ol class="mb-3 small text-muted">
+                        <li>
+                            <a href="@bug.Repo.GitHubUrl/fork" target="_blank" rel="noopener noreferrer">
+                                Fork <strong>@bug.Repo.Name</strong> on GitHub ↗
+                            </a>
+                        </li>
+                        <li>Clone your fork and run <code>dotnet test</code> to reproduce the failure</li>
+                        <li>Find and fix the bug, then push your commit</li>
+                        <li>Paste your fork URL below — we'll check the latest CI run</li>
+                    </ol>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Your fork URL</label>
+                        <input class="form-control" type="url"
+                               placeholder="https://github.com/your-username/@bug.Repo.Name.ToLower()"
+                               @bind="forkUrl" @bind:event="oninput" />
+                    </div>
+
+                    @if (submitError is not null)
+                    {
+                        <div class="alert alert-danger py-2">@submitError</div>
+                    }
+
+                    @if (verificationResult is not null)
+                    {
+                        <div class="alert @(verificationResult.Passed ? "alert-success" : "alert-warning") py-2">
+                            <span class="fw-bold">@(verificationResult.Passed ? "✓ Passed" : "✗ Not yet")</span>
+                            — @verificationResult.Message
+                            @if (verificationResult.CommitSha is { Length: >= 7 } sha)
+                            {
+                                <div class="small mt-1 text-muted">Checked commit: <code>@sha[..7]</code></div>
+                            }
+                        </div>
+                    }
+
+                    <button class="btn btn-primary" @onclick="SubmitFork"
+                            disabled="@(isSubmitting || string.IsNullOrWhiteSpace(forkUrl))">
+                        @if (isSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status" />
+                            <span>Checking...</span>
+                        }
+                        else
+                        {
+                            <span>Check my fork</span>
+                        }
+                    </button>
+
+                    @if (verificationResult?.Passed == true)
+                    {
+                        <a href="/progress" class="btn btn-success ms-2">View my progress →</a>
+                    }
+                </Authorized>
+                <NotAuthorized>
+                    <div class="alert alert-secondary">
+                        <a href="/login">Log in with GitHub</a> to submit your fix and track progress.
+                    </div>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int BugId { get; set; }
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private Bug? bug;
+    private int revealedCount;
+    private string forkUrl = "";
+    private bool isSubmitting;
+    private VerificationResult? verificationResult;
+    private string? submitError;
+    private DateTime _startedAt;
+
+    protected override async Task OnInitializedAsync()
+    {
+        bug = await ChallengeService.GetBugWithHintsAsync(BugId);
+        _startedAt = DateTime.UtcNow;
+    }
+
+    private void RevealHint()
+    {
+        if (bug is not null && revealedCount < bug.Hints.Count)
+            revealedCount++;
+    }
+
+    private async Task SubmitFork()
+    {
+        if (bug is null || string.IsNullOrWhiteSpace(forkUrl)) return;
+
+        var state = await AuthState!;
+        var userId = state.User.GetUserId();
+        if (userId is null)
+        {
+            submitError = "You must be logged in to submit.";
+            return;
+        }
+
+        isSubmitting = true;
+        verificationResult = null;
+        submitError = null;
+
+        try
+        {
+            verificationResult = await VerificationService.VerifyForkAsync(forkUrl);
+            var elapsed = (int)(DateTime.UtcNow - _startedAt).TotalSeconds;
+
+            await AttemptService.RecordAttemptAsync(
+                userId.Value, bug.Id, forkUrl,
+                verificationResult.Passed, revealedCount, elapsed);
+        }
+        catch (Exception ex)
+        {
+            submitError = $"Unexpected error: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private static string DifficultyColor(Difficulty d) => d switch
+    {
+        Difficulty.Easy => "success",
+        Difficulty.Medium => "warning",
+        Difficulty.Hard => "danger",
+        _ => "secondary"
+    };
+}

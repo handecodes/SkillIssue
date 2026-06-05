@@ -1,0 +1,74 @@
+@page "/progress"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject IAttemptService AttemptService
+
+<PageTitle>My Progress — Skill Issue</PageTitle>
+
+<h1 class="mb-4">My Progress</h1>
+
+@if (summary is null)
+{
+    <p class="text-muted">Loading...</p>
+}
+else
+{
+    <div class="row g-3 mb-4">
+        <div class="col-sm-4">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <div class="display-4 text-success fw-bold">@summary.UniqueSolved</div>
+                    <div class="text-muted">Bugs fixed</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <div class="display-4 fw-bold">@summary.TotalAttempts</div>
+                    <div class="text-muted">Total attempts</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <div class="display-4 fw-bold">@summary.ByRepo.Sum(r => r.HintsUsed)</div>
+                    <div class="text-muted">Hints used</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h4 class="mb-3">By Repo</h4>
+    @foreach (var repo in summary.ByRepo)
+    {
+        var pct = repo.TotalBugs == 0 ? 0 : (int)((double)repo.Solved / repo.TotalBugs * 100);
+        <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0">@repo.RepoName</h6>
+                    <span class="text-muted small">@repo.Solved / @repo.TotalBugs solved</span>
+                </div>
+                <div class="progress mb-2" style="height: 8px">
+                    <div class="progress-bar bg-success" style="width: @pct%"></div>
+                </div>
+                <span class="text-muted small">Hints used: @repo.HintsUsed</span>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private UserProgressSummary? summary;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState!;
+        var userId = state.User.GetUserId();
+        if (userId.HasValue)
+            summary = await AttemptService.GetProgressSummaryAsync(userId.Value);
+    }
+}

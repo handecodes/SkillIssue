@@ -1,0 +1,6 @@
+/* Blazor NavLink sets .active — make it visible inside navbar-dark */
+::deep .nav-link.active {
+    color: #fff !important;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}

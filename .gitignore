@@ -1,0 +1,26 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+*.db
+*.db-shm
+*.db-wal
+
+## User secrets (never commit these)
+/src/SkillIssue.Web/Properties/secrets.json
+
+## NuGet
+*.nupkg
+*.snupkg
+packages/
+
+## Rider / Resharper
+.idea/
+*.DotSettings.user
+
+## OS
+.DS_Store
+Thumbs.db
