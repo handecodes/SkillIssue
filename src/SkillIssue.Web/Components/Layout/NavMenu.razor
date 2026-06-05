@@ -1,6 +1,11 @@
+@rendermode InteractiveServer
 @using System.Security.Claims
+@implements IDisposable
+@inject IChallengeService ChallengeService
+@inject NavigationManager Nav
 
 <aside class="ide-sidebar">
+
     <div class="sidebar-logo">
         <span class="logo-name">SkillIssue</span>
         <span class="logo-ver">v1.0.0</span>
@@ -8,10 +13,39 @@
 
     <div class="sidebar-section">Explorer</div>
 
-    <nav class="sidebar-nav">
+    <div class="sidebar-tree">
+        @if (repos is not null)
+        {
+            @foreach (var repo in repos)
+            {
+                <div class="sidebar-folder">
+                    <button class="sidebar-folder-btn" @onclick="() => Toggle(repo.Id)">
+                        <span class="folder-arrow @(IsOpen(repo.Id) ? "open" : "")">&#8250;</span>
+                        <span class="folder-repo-name">@ShortName(repo.Name)</span>
+                    </button>
+
+                    @if (IsOpen(repo.Id))
+                    {
+                        <div class="sidebar-files">
+                            @foreach (var bug in repo.Bugs.OrderBy(b => b.Difficulty))
+                            {
+                                <a href="/challenge/@bug.Id"
+                                   class="sidebar-file @(ActiveBugId == bug.Id ? "active" : "")">
+                                    <span class="file-indicator @DiffClass(bug.Difficulty)"></span>
+                                    <span class="file-label">@bug.Title</span>
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+
+    <div class="sidebar-bottom">
         <NavLink class="sidebar-link" href="/" Match="NavLinkMatch.All">
             <i class="sidebar-icon">&#9633;</i>
-            <span>Challenges</span>
+            <span>Home</span>
         </NavLink>
         <AuthorizeView>
             <Authorized>
@@ -19,13 +53,6 @@
                     <i class="sidebar-icon">&#9678;</i>
                     <span>My Progress</span>
                 </NavLink>
-            </Authorized>
-        </AuthorizeView>
-    </nav>
-
-    <div class="sidebar-bottom">
-        <AuthorizeView>
-            <Authorized>
                 <div class="sidebar-user">
                     @if (context.User.FindFirstValue("urn:github:avatar") is string avatar)
                     {
@@ -48,4 +75,54 @@
             </NotAuthorized>
         </AuthorizeView>
     </div>
+
 </aside>
+
+@code {
+    private IReadOnlyList<Repo>? repos;
+    private HashSet<int> openFolders = [];
+
+    private int? ActiveBugId
+    {
+        get
+        {
+            var path = new Uri(Nav.Uri).AbsolutePath;
+            if (path.StartsWith("/challenge/") &&
+                int.TryParse(path["/challenge/".Length..], out var id))
+                return id;
+            return null;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+        repos = await ChallengeService.GetActiveReposWithBugsAsync();
+        if (repos is not null)
+            foreach (var r in repos)
+                openFolders.Add(r.Id);
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) =>
+        InvokeAsync(StateHasChanged);
+
+    private void Toggle(int repoId)
+    {
+        if (!openFolders.Remove(repoId))
+            openFolders.Add(repoId);
+    }
+
+    private bool IsOpen(int id) => openFolders.Contains(id);
+
+    private static string ShortName(string name) =>
+        name.Contains('/') ? name.Split('/')[1] : name;
+
+    private static string DiffClass(Difficulty d) => d switch {
+        Difficulty.Easy   => "fi-easy",
+        Difficulty.Medium => "fi-medium",
+        Difficulty.Hard   => "fi-hard",
+        _                 => "fi-medium"
+    };
+
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
+}

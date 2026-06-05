@@ -1,67 +1,14 @@
 @page "/"
-@rendermode InteractiveServer
-@inject IChallengeService ChallengeService
 
-<PageTitle>Challenges — Skill Issue</PageTitle>
+<PageTitle>Skill Issue — Debugging Challenges</PageTitle>
 
-<div class="explorer-lede">
-    <h1 class="explorer-headline">Debugging Challenges</h1>
-    <p class="explorer-sub">Navigate a real codebase. Find the bug. Fix it. Prove it.</p>
+<div class="welcome-pane">
+    <div class="welcome-inner">
+        <h1 class="welcome-title">// skill-issue</h1>
+        <p class="welcome-sub">
+            Navigate a real open-source codebase.<br />
+            Find the bug. Fix it. Push. Prove it.
+        </p>
+        <p class="welcome-hint">&#8592; Select a challenge from the sidebar to begin.</p>
+    </div>
 </div>
-
-@if (repos is null)
-{
-    <p class="pane-title">Loading...</p>
-}
-else if (repos.Count == 0)
-{
-    <p style="color: var(--text-3); font-family: var(--mono); font-size: 13px;">No challenges seeded yet.</p>
-}
-else
-{
-    @foreach (var repo in repos)
-    {
-        <div class="repo-block">
-            <div class="repo-block-head">
-                <div>
-                    <span class="repo-name-mono">@repo.Name</span>
-                    <p class="repo-desc">@repo.Description</p>
-                </div>
-                <div class="repo-meta">
-                    <span class="repo-lang-tag">@repo.Language</span>
-                    <a href="@repo.GitHubUrl" target="_blank" rel="noopener noreferrer"
-                       class="btn btn-sm btn-outline-secondary">&#8599;</a>
-                </div>
-            </div>
-
-            <ul class="file-list">
-                @foreach (var bug in repo.Bugs.OrderBy(b => b.Difficulty))
-                {
-                    <li>
-                        <a href="/challenge/@bug.Id" class="file-entry">
-                            <span class="file-chevron">&#8250;</span>
-                            <span class="file-name">@bug.Title</span>
-                            <span class="diff @DiffClass(bug.Difficulty)">@bug.Difficulty</span>
-                        </a>
-                    </li>
-                }
-            </ul>
-        </div>
-    }
-}
-
-@code {
-    private IReadOnlyList<Repo>? repos;
-
-    protected override async Task OnInitializedAsync()
-    {
-        repos = await ChallengeService.GetActiveReposWithBugsAsync();
-    }
-
-    private static string DiffClass(Difficulty d) => d switch {
-        Difficulty.Easy   => "diff-easy",
-        Difficulty.Medium => "diff-medium",
-        Difficulty.Hard   => "diff-hard",
-        _                 => "diff-medium"
-    };
-}

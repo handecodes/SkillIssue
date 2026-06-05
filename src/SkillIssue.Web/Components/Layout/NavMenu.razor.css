@@ -1,10 +1,10 @@
-/* sidebar styles live in app.css; ::deep needed for NavLink .active */
+/* Scoped active state for Blazor NavLink */
 ::deep .sidebar-link.active {
-    background: var(--bg-active);
-    color: var(--text-1);
-    border-left-color: var(--accent);
+    background: var(--bg-5);
+    color: var(--t1);
+    border-left-color: var(--gold);
 }
 
 ::deep .sidebar-link.active .sidebar-icon {
-    color: var(--accent);
+    color: var(--gold);
 }
