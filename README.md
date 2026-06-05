@@ -20,8 +20,8 @@ Dependency flow: `Web` → `Application` → `Data` → `Domain`
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - A [GitHub OAuth App](https://github.com/settings/applications/new)
-  - Homepage URL: `http://localhost:5000`
-  - Callback URL: `http://localhost:5000/signin-github`
+  - Homepage URL: `http://localhost:5239`
+  - Callback URL: `http://localhost:5239/signin-github`
 
 ## Setup
 
@@ -59,7 +59,7 @@ dotnet ef migrations add <MigrationName> \
 dotnet run --project src/SkillIssue.Web
 ```
 
-The app opens at `http://localhost:5000`. The database (`skillissue.db`) is created automatically with seed data (2 sample repos, 3 challenges).
+The app opens at `http://localhost:5239`. The database (`skillissue.db`) is created automatically with seed data (2 sample repos, 3 challenges).
 
 ## Running tests
 
