@@ -3,33 +3,38 @@
 @inject IChallengeService ChallengeService
 @inject NavigationManager Nav
 
-<aside class="ide-sidebar">
+<aside class="ide-sidebar" aria-label="File explorer">
 
-    <div class="sidebar-logo">
+    <div class="sidebar-logo" aria-hidden="true">
         <span class="logo-name">SkillIssue</span>
         <span class="logo-ver">v1.0.0</span>
     </div>
 
-    <div class="sidebar-section">Explorer</div>
+    <div class="sidebar-section" aria-hidden="true">Explorer</div>
 
-    <div class="sidebar-tree">
+    <div class="sidebar-tree" role="tree" aria-label="Challenges">
         @if (repos is not null)
         {
             @foreach (var repo in repos)
             {
-                <div class="sidebar-folder">
-                    <button class="sidebar-folder-btn" @onclick="() => Toggle(repo.Id)">
-                        <span class="folder-arrow @(IsOpen(repo.Id) ? "open" : "")">&#8250;</span>
+                <div class="sidebar-folder" role="treeitem" aria-expanded="@(IsOpen(repo.Id) ? "true" : "false")">
+                    <button class="sidebar-folder-btn"
+                            aria-expanded="@(IsOpen(repo.Id) ? "true" : "false")"
+                            aria-label="@ShortName(repo.Name) repository, @(IsOpen(repo.Id) ? "expanded" : "collapsed")"
+                            @onclick="() => Toggle(repo.Id)">
+                        <span class="folder-arrow @(IsOpen(repo.Id) ? "open" : "")" aria-hidden="true">&#8250;</span>
                         <span class="folder-repo-name">@ShortName(repo.Name)</span>
                     </button>
 
                     @if (IsOpen(repo.Id))
                     {
-                        <div class="sidebar-files">
+                        <div class="sidebar-files" role="group">
                             @foreach (var bug in repo.Bugs.OrderBy(b => b.Difficulty))
                             {
                                 <a href="/challenge/@bug.Id"
-                                   class="sidebar-file @(ActiveBugId == bug.Id ? "active" : "")">
+                                   class="sidebar-file @(ActiveBugId == bug.Id ? "active" : "")"
+                                   role="treeitem"
+                                   aria-current="@(ActiveBugId == bug.Id ? "page" : null)">
                                     <DifficultyDots Level="bug.Difficulty" ShowLabel="false" />
                                     <span class="file-label">@bug.Title</span>
                                 </a>
@@ -41,15 +46,15 @@
         }
     </div>
 
-    <div class="sidebar-bottom">
+    <nav class="sidebar-bottom" aria-label="App navigation">
         <NavLink class="sidebar-link" href="/" Match="NavLinkMatch.All">
-            <i class="sidebar-icon">&#9633;</i>
+            <i class="sidebar-icon" aria-hidden="true">&#9633;</i>
             <span>Home</span>
         </NavLink>
         <AuthorizeView>
             <Authorized>
                 <NavLink class="sidebar-link" href="/progress">
-                    <i class="sidebar-icon">&#9678;</i>
+                    <i class="sidebar-icon" aria-hidden="true">&#9678;</i>
                     <span>My Progress</span>
                 </NavLink>
                 <div class="sidebar-user">
@@ -57,23 +62,23 @@
                     {
                         <img src="@avatar" alt="" class="sidebar-avatar" />
                     }
-                    <span class="sidebar-username">
+                    <span class="sidebar-username" aria-hidden="true">
                         @context.User.FindFirstValue(ClaimTypes.Name)
                     </span>
                 </div>
                 <a class="sidebar-link" href="/logout">
-                    <i class="sidebar-icon">&#8592;</i>
+                    <i class="sidebar-icon" aria-hidden="true">&#8592;</i>
                     <span>Log out</span>
                 </a>
             </Authorized>
             <NotAuthorized>
                 <a class="sidebar-link" href="/login">
-                    <i class="sidebar-icon">&#8594;</i>
+                    <i class="sidebar-icon" aria-hidden="true">&#8594;</i>
                     <span>Login with GitHub</span>
                 </a>
             </NotAuthorized>
         </AuthorizeView>
-    </div>
+    </nav>
 
 </aside>
 

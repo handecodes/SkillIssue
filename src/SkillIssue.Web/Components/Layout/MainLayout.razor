@@ -1,32 +1,34 @@
 @inherits LayoutComponentBase
 @inject NavigationManager Nav
 
+<a href="#main-content" class="skip-link">Skip to content</a>
+
 <NavMenu />
 
-<div class="ide-tabbar">
-    <a href="/" class="ide-tab @(IsHome ? "active" : "")">
-        <span class="tab-dot"></span>challenges.ts
+<nav class="ide-tabbar" aria-label="Open tabs">
+    <a href="/" class="ide-tab @(IsHome ? "active" : "")" aria-current="@(IsHome ? "page" : null)">
+        <span class="tab-dot" aria-hidden="true"></span>challenges.ts
     </a>
     <AuthorizeView>
         <Authorized>
-            <a href="/progress" class="ide-tab @(IsProgress ? "active" : "")">
-                <span class="tab-dot"></span>progress.sh
+            <a href="/progress" class="ide-tab @(IsProgress ? "active" : "")" aria-current="@(IsProgress ? "page" : null)">
+                <span class="tab-dot" aria-hidden="true"></span>progress.sh
             </a>
         </Authorized>
     </AuthorizeView>
     @if (IsChallenge)
     {
-        <div class="ide-tab active">
-            <span class="tab-dot"></span>@ChallengeTabName
-        </div>
+        <span class="ide-tab active" role="tab" aria-selected="true">
+            <span class="tab-dot" aria-hidden="true"></span>@ChallengeTabName
+        </span>
     }
-</div>
+</nav>
 
-<div class="ide-editor">
+<main class="ide-editor" id="main-content">
     @Body
-</div>
+</main>
 
-<div class="ide-statusbar">
+<div class="ide-statusbar" aria-hidden="true">
     <div class="sb-side">
         <span class="sb-item branch">&#9670; main</span>
         <span class="sb-item">@ActiveTabLabel</span>

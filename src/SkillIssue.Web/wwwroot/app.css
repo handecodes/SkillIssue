@@ -20,18 +20,18 @@
   /* Text */
   --t1: #f4e9dd;
   --t2: #c4a090;
-  --t3: #8a6558;
-  --t4: #5a3c38;
+  --t3: #bc9484;   /* a11y: bumped from #8a6558 — 5.4:1 on --bg, 5.0:1 on --bg-2 */
+  --t4: #5a3c38;   /* decorative only — always paired with aria-hidden */
 
   /* Gold accent */
   --gold:    #d4a056;
   --gold-hi: #e4b870;
   --gold-lo: #7a5c28;
 
-  /* Status */
-  --green:    #5daa5a;
+  /* Status — a11y: brightened to meet 4.5:1 on their respective dark backgrounds */
+  --green:    #68bb66;   /* was #5daa5a — 4.7:1 on --green-bg */
   --green-bg: #1c381c;
-  --red:      #e05555;
+  --red:      #f07878;   /* was #e05555 — 4.7:1 on --red-bg */
   --red-bg:   #5a1818;
 
   /* Typography */
@@ -346,8 +346,8 @@ h1,h2,h3,h4,h5,h6 { color: var(--t1); font-weight: 600; margin-top: 0; }
 .diff-badge-easy   .dd-off { background: #8aaa7a; opacity: .18; }
 .diff-badge-medium .dd-on  { background: #d4956a; }
 .diff-badge-medium .dd-off { background: #d4956a; opacity: .18; }
-.diff-badge-hard   .dd-on  { background: #c46070; }
-.diff-badge-hard   .dd-off { background: #c46070; opacity: .18; }
+.diff-badge-hard   .dd-on  { background: #d07888; }
+.diff-badge-hard   .dd-off { background: #d07888; opacity: .18; }
 
 /* Inline (no badge wrapper) — sidebar use */
 .diff-dots .dd-on  { background: currentColor; }
@@ -375,7 +375,7 @@ h1,h2,h3,h4,h5,h6 { color: var(--t1); font-weight: 600; margin-top: 0; }
 }
 .diff-badge-easy   .diff-badge-lbl { color: #8aaa7a; }
 .diff-badge-medium .diff-badge-lbl { color: #d4956a; }
-.diff-badge-hard   .diff-badge-lbl { color: #c46070; }
+.diff-badge-hard   .diff-badge-lbl { color: #d07888; }  /* a11y: 4.5:1 on hard-bg */
 
 /* Inline label (non-badge contexts) */
 .diff-inline-lbl {
@@ -385,8 +385,8 @@ h1,h2,h3,h4,h5,h6 { color: var(--t1); font-weight: 600; margin-top: 0; }
 
 /* ── Challenge page ──────────────────────────────────── */
 .crumb { font-family: var(--mono); font-size: 11px; color: var(--t3); margin-bottom: 8px; }
-.crumb a { color: var(--gold-lo); }
-.crumb a:hover { color: var(--gold); }
+.crumb a { color: var(--gold); }         /* a11y: --gold-lo was 2.7:1, --gold is 6.5:1 */
+.crumb a:hover { color: var(--gold-hi); }
 
 .challenge-head {
   display: flex; align-items: flex-start; justify-content: space-between;
@@ -426,10 +426,10 @@ h1,h2,h3,h4,h5,h6 { color: var(--t1); font-weight: 600; margin-top: 0; }
 
 .code-panel-tag {
   font-family: var(--mono); font-size: 10px; font-weight: 700;
-  letter-spacing: 1px; text-transform: uppercase; color: var(--t3);
+  letter-spacing: 1px; text-transform: uppercase; color: var(--t2); /* a11y: --t3 fails on bg-4 */
 }
 
-.code-panel-tag.err { color: #c46070; }
+.code-panel-tag.err { color: #f07878; }
 
 .code-panel-body { padding: 12px 16px; overflow-x: auto; }
 
@@ -473,7 +473,7 @@ h1,h2,h3,h4,h5,h6 { color: var(--t1); font-weight: 600; margin-top: 0; }
   display: flex; align-items: center; padding: 0 10px;
   font-family: var(--mono); font-size: 10px; font-weight: 700;
   letter-spacing: .8px; text-transform: uppercase;
-  color: var(--t3); border-bottom: 2px solid transparent; cursor: default;
+  color: var(--t2); border-bottom: 2px solid transparent; cursor: default; /* a11y: --t3 fails on bg-4 */
 }
 
 .terminal-tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
@@ -493,7 +493,7 @@ h1,h2,h3,h4,h5,h6 { color: var(--t1); font-weight: 600; margin-top: 0; }
 }
 
 .step-list li:last-child { border-bottom: none; }
-.step-n { font-family: var(--mono); font-size: 10px; color: var(--gold-lo); min-width: 14px; flex-shrink: 0; }
+.step-n { font-family: var(--mono); font-size: 10px; color: var(--gold); min-width: 14px; flex-shrink: 0; } /* a11y */
 
 /* Result strips */
 .result-strip {
@@ -582,12 +582,51 @@ h1,h2,h3,h4,h5,h6 { color: var(--t1); font-weight: 600; margin-top: 0; }
 
 .progress-repo { background: var(--bg-3); border: 1px solid var(--line); border-radius: 4px; padding: 14px 18px; margin-bottom: 10px; }
 .progress-repo-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
-.progress-repo-name { font-family: var(--mono); font-size: 13px; color: var(--t1); }
+.progress-repo-name { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--t1); margin: 0; }
 .progress-repo-score { font-family: var(--mono); font-size: 11px; color: var(--t3); }
 
 .progress-track { height: 4px; background: var(--bg-4); border-radius: 2px; overflow: hidden; margin-bottom: 6px; }
 .progress-fill  { height: 100%; background: var(--green); border-radius: 2px; transition: width .4s ease; }
 .progress-hints { font-family: var(--mono); font-size: 11px; color: var(--t3); }
+
+/* ── Accessibility utilities ─────────────────────────── */
+
+/* Screen-reader only — visually hidden but accessible */
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+/* Skip-to-main link — visible on keyboard focus only */
+.skip-link {
+  position: fixed; top: -100%; left: 12px; z-index: 9999;
+  background: var(--gold); color: #160a04;
+  font-family: var(--mono); font-size: 12px; font-weight: 700;
+  padding: 6px 14px; border-radius: 0 0 4px 4px;
+  text-decoration: none; transition: top .1s;
+}
+.skip-link:focus { top: 0; }
+
+/* Global focus-visible ring — keyboard navigation indicator */
+:focus-visible {
+  outline: 2px solid var(--gold) !important;
+  outline-offset: 2px !important;
+}
+
+/* Tighter ring for small inline elements */
+.sidebar-file:focus-visible,
+.sidebar-folder-btn:focus-visible,
+.sidebar-link:focus-visible,
+.ide-tab:focus-visible {
+  outline-offset: -2px !important;
+}
+
+/* Override the outline:none that Bootstrap/our CSS adds */
+.form-control:focus {
+  outline: 2px solid var(--gold-lo) !important;
+  outline-offset: 0 !important;
+}
 
 /* ── Scrollbars ──────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }

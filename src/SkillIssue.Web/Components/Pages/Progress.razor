@@ -4,7 +4,7 @@
 
 <PageTitle>My Progress — Skill Issue</PageTitle>
 
-<p class="pane-title">Output &mdash; My Progress</p>
+<h1 class="pane-title">My Progress</h1>
 
 @if (summary is null)
 {
@@ -27,14 +27,14 @@ else
         </div>
     </div>
 
-    <p class="pane-title">By repo</p>
+    <h2 class="pane-title">By repo</h2>
 
     @foreach (var repo in summary.ByRepo)
     {
         var pct = repo.TotalBugs == 0 ? 0 : (int)((double)repo.Solved / repo.TotalBugs * 100);
         <div class="progress-repo">
             <div class="progress-repo-row">
-                <span class="progress-repo-name">@repo.RepoName</span>
+                <h3 class="progress-repo-name">@repo.RepoName</h3>
                 <span class="progress-repo-score">@repo.Solved / @repo.TotalBugs solved</span>
             </div>
             <div class="progress-track">
