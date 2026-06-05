@@ -43,6 +43,12 @@
   --tabbar-h:    35px;
   --statusbar-h: 22px;
 
+  /* Legacy aliases */
+  --text-1: var(--t1);
+  --text-2: var(--t2);
+  --text-3: var(--t3);
+  --accent:  var(--gold);
+
   /* ── Override Bootstrap to prevent white leaking through ── */
   --bs-body-bg:               #2b1820;
   --bs-body-color:            #f4e9dd;
