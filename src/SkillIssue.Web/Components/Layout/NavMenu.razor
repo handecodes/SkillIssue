@@ -30,7 +30,7 @@
                             {
                                 <a href="/challenge/@bug.Id"
                                    class="sidebar-file @(ActiveBugId == bug.Id ? "active" : "")">
-                                    <span class="file-indicator @DiffClass(bug.Difficulty)"></span>
+                                    <DifficultyDots Level="bug.Difficulty" ShowLabel="false" />
                                     <span class="file-label">@bug.Title</span>
                                 </a>
                             }
@@ -115,13 +115,6 @@
 
     private static string ShortName(string name) =>
         name.Contains('/') ? name.Split('/')[1] : name;
-
-    private static string DiffClass(Difficulty d) => d switch {
-        Difficulty.Easy   => "fi-easy",
-        Difficulty.Medium => "fi-medium",
-        Difficulty.Hard   => "fi-hard",
-        _                 => "fi-medium"
-    };
 
     public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
 }

@@ -1,0 +1,58 @@
+@* Dot-based difficulty indicator. Badge=true adds background/border container. *@
+
+@if (Badge)
+{
+    <span class="diff-badge diff-badge-@LevelKey"
+          role="img"
+          aria-label="Difficulty: @Level">
+        <span class="diff-dots">
+            @for (int i = 1; i <= 3; i++)
+            {
+                <span class="dd-dot @(i <= FilledCount ? "dd-on" : "dd-off")"></span>
+            }
+        </span>
+        @if (ShowLabel)
+        {
+            <span class="diff-badge-lbl">@Level</span>
+        }
+    </span>
+}
+else
+{
+    <span class="diff-dots"
+          role="img"
+          aria-label="Difficulty: @Level">
+        @for (int i = 1; i <= 3; i++)
+        {
+            <span class="dd-dot @(i <= FilledCount ? "dd-on" : "dd-off")"></span>
+        }
+        @if (ShowLabel)
+        {
+            <span class="diff-inline-lbl">@Level</span>
+        }
+    </span>
+}
+
+@code {
+    [Parameter, EditorRequired] public Difficulty Level { get; set; }
+
+    /// <summary>Show "Easy / Medium / Hard" text next to dots.</summary>
+    [Parameter] public bool ShowLabel { get; set; } = true;
+
+    /// <summary>Wrap with pill background and border (for badge use).</summary>
+    [Parameter] public bool Badge { get; set; } = false;
+
+    private int FilledCount => Level switch {
+        Difficulty.Easy   => 1,
+        Difficulty.Medium => 2,
+        Difficulty.Hard   => 3,
+        _                 => 1
+    };
+
+    private string LevelKey => Level switch {
+        Difficulty.Easy   => "easy",
+        Difficulty.Medium => "medium",
+        Difficulty.Hard   => "hard",
+        _                 => "easy"
+    };
+}

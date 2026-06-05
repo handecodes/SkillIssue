@@ -17,7 +17,7 @@ else
         <div>
             <h1 class="challenge-h1">@bug.Title</h1>
             <div class="challenge-badges">
-                <span class="diff @DiffClass(bug.Difficulty)">@bug.Difficulty</span>
+                <DifficultyDots Level="bug.Difficulty" Badge="true" ShowLabel="true" />
             </div>
         </div>
         <a href="@bug.Repo.GitHubUrl" target="_blank" rel="noopener noreferrer"
@@ -228,10 +228,4 @@ else
         }
     }
 
-    private static string DiffClass(Difficulty d) => d switch {
-        Difficulty.Easy   => "diff-easy",
-        Difficulty.Medium => "diff-medium",
-        Difficulty.Hard   => "diff-hard",
-        _                 => "diff-medium"
-    };
 }

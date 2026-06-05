@@ -200,13 +200,7 @@ h1,h2,h3,h4,h5,h6 { color: var(--t1); font-weight: 600; margin-top: 0; }
   background: var(--bg-5); color: var(--t1); border-left-color: var(--gold);
 }
 
-.file-indicator {
-  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
-}
-
-.fi-easy   { background: #8aaa7a; }
-.fi-medium { background: var(--gold); }
-.fi-hard   { background: #c46070; }
+/* Sidebar uses DifficultyDots component — dots render inline */
 
 .file-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -334,18 +328,60 @@ h1,h2,h3,h4,h5,h6 { color: var(--t1); font-weight: 600; margin-top: 0; }
   letter-spacing: 1.4px; text-transform: uppercase; color: var(--t3); margin-bottom: 18px;
 }
 
-/* ── Difficulty badges (wine palette) ───────────────── */
-.diff {
-  font-family: var(--mono); font-size: 10px; font-weight: 700;
-  padding: 2px 8px; border-radius: 3px; flex-shrink: 0; letter-spacing: .3px;
+/* ── Difficulty dots (DifficultyDots component) ──────── */
+
+/* Container */
+.diff-dots {
+  display: inline-flex; align-items: center; gap: 3px;
 }
 
-/* soft sage */
-.diff-easy   { background: #1b2a1b; color: #8aaa7a; border: 1px solid #3a5830; }
-/* warm apricot */
-.diff-medium { background: #2c1a0e; color: #d4956a; border: 1px solid #5a3018; }
-/* wine-rose */
-.diff-hard   { background: #3a1828; color: #c46070; border: 1px solid #6a2040; }
+/* Individual dot */
+.dd-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  display: inline-block; flex-shrink: 0;
+}
+
+/* Colours per difficulty — applied via parent badge class or inline */
+.diff-badge-easy   .dd-on  { background: #8aaa7a; }
+.diff-badge-easy   .dd-off { background: #8aaa7a; opacity: .18; }
+.diff-badge-medium .dd-on  { background: #d4956a; }
+.diff-badge-medium .dd-off { background: #d4956a; opacity: .18; }
+.diff-badge-hard   .dd-on  { background: #c46070; }
+.diff-badge-hard   .dd-off { background: #c46070; opacity: .18; }
+
+/* Inline (no badge wrapper) — sidebar use */
+.diff-dots .dd-on  { background: currentColor; }
+.diff-dots .dd-off { background: currentColor; opacity: .18; }
+
+/* Colour for standalone .diff-dots (sidebar files inherit link color) */
+.sidebar-file .diff-dots { color: var(--t3); }
+.sidebar-file:hover .diff-dots { color: var(--t2); }
+.sidebar-file.active .diff-dots { color: var(--gold); }
+
+/* Badge pill */
+.diff-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px; border-radius: 3px; flex-shrink: 0;
+}
+
+.diff-badge-easy   { background: #1b2a1b; border: 1px solid #3a5830; }
+.diff-badge-medium { background: #2c1a0e; border: 1px solid #5a3018; }
+.diff-badge-hard   { background: #3a1828; border: 1px solid #6a2040; }
+
+/* Text label inside badge */
+.diff-badge-lbl {
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .3px; text-transform: capitalize;
+}
+.diff-badge-easy   .diff-badge-lbl { color: #8aaa7a; }
+.diff-badge-medium .diff-badge-lbl { color: #d4956a; }
+.diff-badge-hard   .diff-badge-lbl { color: #c46070; }
+
+/* Inline label (non-badge contexts) */
+.diff-inline-lbl {
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .3px; text-transform: capitalize; margin-left: 3px;
+}
 
 /* ── Challenge page ──────────────────────────────────── */
 .crumb { font-family: var(--mono); font-size: 11px; color: var(--t3); margin-bottom: 8px; }
