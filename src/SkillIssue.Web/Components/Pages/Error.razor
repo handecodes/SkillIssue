@@ -4,13 +4,16 @@
 
 <PageTitle>Error — Skill Issue</PageTitle>
 
-<div class="text-center py-5">
-    <h1 class="display-4 text-danger">Something went wrong</h1>
+<div style="text-align: center; padding: 60px 0;">
+    <p style="font-family: var(--mono); font-size: 48px; font-weight: 700; color: var(--red); margin: 0 0 12px;">&#9747;</p>
+    <p style="font-family: var(--mono); font-size: 14px; color: var(--text-2); margin-bottom: 8px;">An unhandled error occurred.</p>
     @if (ShowRequestId)
     {
-        <p class="text-muted small">Request ID: <code>@RequestId</code></p>
+        <p style="font-family: var(--mono); font-size: 11px; color: var(--text-3); margin-bottom: 20px;">
+            Request ID: <code>@RequestId</code>
+        </p>
     }
-    <a href="/" class="btn btn-primary">Back to challenges</a>
+    <a href="/" class="btn btn-outline-secondary">&#8592; Back to challenges</a>
 </div>
 
 @code {

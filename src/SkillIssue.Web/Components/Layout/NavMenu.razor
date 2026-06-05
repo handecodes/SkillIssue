@@ -1,37 +1,51 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3">
-    <a class="navbar-brand fw-bold" href="/">
-        <span class="text-danger">&#10006;</span> Skill Issue
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navContent">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navContent">
-        <ul class="navbar-nav me-auto">
-            <li class="nav-item">
-                <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">Challenges</NavLink>
-            </li>
-            <AuthorizeView>
-                <Authorized>
-                    <li class="nav-item">
-                        <NavLink class="nav-link" href="/progress">My Progress</NavLink>
-                    </li>
-                </Authorized>
-            </AuthorizeView>
-        </ul>
+@using System.Security.Claims
+
+<aside class="ide-sidebar">
+    <div class="sidebar-logo">
+        <span class="logo-name">SkillIssue</span>
+        <span class="logo-ver">v1.0.0</span>
+    </div>
+
+    <div class="sidebar-section">Explorer</div>
+
+    <nav class="sidebar-nav">
+        <NavLink class="sidebar-link" href="/" Match="NavLinkMatch.All">
+            <i class="sidebar-icon">&#9633;</i>
+            <span>Challenges</span>
+        </NavLink>
         <AuthorizeView>
             <Authorized>
-                <span class="navbar-text text-light me-3">
+                <NavLink class="sidebar-link" href="/progress">
+                    <i class="sidebar-icon">&#9678;</i>
+                    <span>My Progress</span>
+                </NavLink>
+            </Authorized>
+        </AuthorizeView>
+    </nav>
+
+    <div class="sidebar-bottom">
+        <AuthorizeView>
+            <Authorized>
+                <div class="sidebar-user">
                     @if (context.User.FindFirstValue("urn:github:avatar") is string avatar)
                     {
-                        <img src="@avatar" alt="avatar" width="24" height="24" class="rounded-circle me-1" />
+                        <img src="@avatar" alt="" class="sidebar-avatar" />
                     }
-                    @context.User.FindFirstValue(System.Security.Claims.ClaimTypes.Name)
-                </span>
-                <a class="btn btn-outline-light btn-sm" href="/logout">Log out</a>
+                    <span class="sidebar-username">
+                        @context.User.FindFirstValue(ClaimTypes.Name)
+                    </span>
+                </div>
+                <a class="sidebar-link" href="/logout">
+                    <i class="sidebar-icon">&#8592;</i>
+                    <span>Log out</span>
+                </a>
             </Authorized>
             <NotAuthorized>
-                <a class="btn btn-outline-light btn-sm" href="/login">Login with GitHub</a>
+                <a class="sidebar-link" href="/login">
+                    <i class="sidebar-icon">&#8594;</i>
+                    <span>Login with GitHub</span>
+                </a>
             </NotAuthorized>
         </AuthorizeView>
     </div>
-</nav>
+</aside>

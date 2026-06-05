@@ -1,9 +1,42 @@
 @inherits LayoutComponentBase
+@inject NavigationManager Nav
 
-<NavMenu />
+<div class="ide-shell">
+    <NavMenu />
+    <div class="ide-main">
+        <div class="ide-tabbar">
+            <a href="/" class="ide-tab @(IsHome ? "active" : "")">
+                <span class="tab-dot"></span>challenges.ts
+            </a>
+            <AuthorizeView>
+                <Authorized>
+                    <a href="/progress" class="ide-tab @(IsProgress ? "active" : "")">
+                        <span class="tab-dot"></span>progress.sh
+                    </a>
+                </Authorized>
+            </AuthorizeView>
+            @if (IsChallenge)
+            {
+                <div class="ide-tab active">
+                    <span class="tab-dot"></span>@ChallengeTabName
+                </div>
+            }
+        </div>
+        <div class="ide-editor">
+            @Body
+        </div>
+    </div>
+</div>
 
-<div class="container mt-4">
-    @Body
+<div class="ide-statusbar">
+    <div class="sb-side">
+        <span class="sb-item branch">&#9670; main</span>
+        <span class="sb-item">@ActiveTabLabel</span>
+    </div>
+    <div class="sb-side">
+        <span class="sb-item"><a href="https://github.com/handecodes/SkillIssue" target="_blank" rel="noopener noreferrer">Docs</a></span>
+        <span class="sb-item">Skill Issue v1.0</span>
+    </div>
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
@@ -11,3 +44,20 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">&#x2715;</span>
 </div>
+
+@code {
+    private string Path => new Uri(Nav.Uri).AbsolutePath;
+
+    private bool IsHome      => Path == "/";
+    private bool IsProgress  => Path.StartsWith("/progress");
+    private bool IsChallenge => Path.StartsWith("/challenge/");
+
+    private string ChallengeTabName => "bug.cs";
+
+    private string ActiveTabLabel => Path switch {
+        "/"                            => "challenges.ts",
+        var p when p.StartsWith("/progress")  => "progress.sh",
+        var p when p.StartsWith("/challenge/") => "bug.cs",
+        _                              => "skill-issue"
+    };
+}

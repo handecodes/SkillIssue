@@ -1,6 +1,10 @@
-/* Blazor NavLink sets .active — make it visible inside navbar-dark */
-::deep .nav-link.active {
-    color: #fff !important;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+/* sidebar styles live in app.css; ::deep needed for NavLink .active */
+::deep .sidebar-link.active {
+    background: var(--bg-active);
+    color: var(--text-1);
+    border-left-color: var(--accent);
+}
+
+::deep .sidebar-link.active .sidebar-icon {
+    color: var(--accent);
 }

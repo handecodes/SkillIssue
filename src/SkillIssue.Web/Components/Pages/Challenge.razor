@@ -8,150 +8,167 @@
 
 @if (bug is null)
 {
-    <p class="text-muted">Loading challenge...</p>
+    <p style="color: var(--text-3); font-family: var(--mono); font-size: 13px;">Loading...</p>
 }
 else
 {
-    <nav aria-label="breadcrumb" class="mb-3">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/">Challenges</a></li>
-            <li class="breadcrumb-item active">@bug.Repo.Name</li>
-        </ol>
-    </nav>
+    <p class="crumb"><a href="/">Challenges</a> &rsaquo; @bug.Repo.Name</p>
 
-    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-        <h1 class="mb-0 me-2">@bug.Title</h1>
-        <span class="badge bg-@DifficultyColor(bug.Difficulty) fs-6">@bug.Difficulty</span>
+    <div class="challenge-head">
+        <div>
+            <h1 class="challenge-h1">@bug.Title</h1>
+            <div class="challenge-badges">
+                <span class="diff @DiffClass(bug.Difficulty)">@bug.Difficulty</span>
+            </div>
+        </div>
         <a href="@bug.Repo.GitHubUrl" target="_blank" rel="noopener noreferrer"
-           class="btn btn-sm btn-outline-secondary ms-auto">
-            View repo on GitHub ↗
+           class="btn btn-sm btn-outline-secondary" style="white-space: nowrap;">
+            View repo &#8599;
         </a>
     </div>
 
-    <!-- Problem description -->
-    <div class="card mb-3">
-        <div class="card-body">
-            <h5 class="card-title">What's broken</h5>
-            <p class="card-text">@bug.Brief</p>
-        </div>
+    <!-- Brief -->
+    <div class="challenge-section">
+        <span class="sec-label">What's broken</span>
+        <p class="brief-text">@bug.Brief</p>
     </div>
 
-    <div class="row g-3 mb-3">
-        <div class="col-md-7">
-            <div class="card border-danger h-100">
-                <div class="card-body">
-                    <h6 class="card-title text-danger mb-2">Error / failing output</h6>
-                    <pre class="mb-0 small bg-light p-2 rounded">@bug.ErrorMessage</pre>
-                </div>
+    <!-- Error + failing tests -->
+    <div class="challenge-section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="code-panel" style="margin-bottom: 0;">
+            <div class="code-panel-head">
+                <span class="code-panel-tag err">&#9747; Failing output</span>
+            </div>
+            <div class="code-panel-body">
+                <pre>@bug.ErrorMessage</pre>
             </div>
         </div>
-        <div class="col-md-5">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h6 class="card-title mb-2">Failing tests</h6>
-                    @foreach (var test in bug.FailingTests.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
-                    {
-                        <code class="d-block small mb-1">@test</code>
-                    }
-                </div>
+        <div class="code-panel" style="margin-bottom: 0;">
+            <div class="code-panel-head">
+                <span class="code-panel-tag">Failing tests</span>
+            </div>
+            <div class="code-panel-body">
+                @foreach (var t in bug.FailingTests.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+                {
+                    <code>@t</code>
+                }
             </div>
         </div>
     </div>
 
     <!-- Hints -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <h5 class="mb-0">Hints</h5>
-                <span class="text-muted small">@revealedCount / @bug.Hints.Count revealed</span>
+    <div class="challenge-section">
+        <span class="sec-label">Hints</span>
+        <p class="hint-tally">@revealedCount / @bug.Hints.Count revealed &mdash; fewer hints used = cleaner result</p>
+
+        @foreach (var hint in bug.Hints.OrderBy(h => h.Order).Take(revealedCount))
+        {
+            <div class="hint-card">
+                <div class="hint-tag">@hint.Label</div>
+                <div class="hint-body">@hint.Content</div>
             </div>
-            @if (revealedCount == 0)
-            {
-                <p class="text-muted small mb-2">Try to find the bug on your own first. Each hint costs you nothing, but fewer hints = more impressive fix.</p>
-            }
-            @foreach (var hint in bug.Hints.Take(revealedCount))
-            {
-                <div class="alert alert-info py-2 mb-2">
-                    <strong>@hint.Label:</strong> @hint.Content
-                </div>
-            }
-            @if (revealedCount < bug.Hints.Count)
-            {
-                <button class="btn btn-outline-secondary btn-sm" @onclick="RevealHint">
-                    Reveal hint @(revealedCount + 1): @bug.Hints[revealedCount].Label
-                </button>
-            }
-            else
-            {
-                <span class="text-muted small">All hints revealed.</span>
-            }
-        </div>
+        }
+
+        @if (revealedCount < bug.Hints.Count)
+        {
+            <button class="btn btn-outline-secondary btn-sm" @onclick="RevealHint">
+                Reveal hint @(revealedCount + 1): @bug.Hints.OrderBy(h => h.Order).ElementAt(revealedCount).Label
+            </button>
+        }
+        else
+        {
+            <span style="font-family: var(--mono); font-size: 11px; color: var(--text-3);">All hints revealed.</span>
+        }
     </div>
 
-    <!-- Submit -->
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">Submit your fix</h5>
+    <!-- Submit terminal -->
+    <div class="terminal-panel">
+        <div class="terminal-tabs">
+            <span class="terminal-tab-btn">Problems</span>
+            <span class="terminal-tab-btn">Output</span>
+            <span class="terminal-tab-btn active">Terminal</span>
+        </div>
+        <div class="terminal-body">
+            <p class="terminal-prompt">
+                <span class="prompt-path">~/skill-issue</span>
+                <span style="color: var(--text-3);"> $ </span>
+                <span class="prompt-cmd">submit-fork</span>
+            </p>
 
             <AuthorizeView>
                 <Authorized>
-                    <ol class="mb-3 small text-muted">
+                    <ol class="step-list">
                         <li>
-                            <a href="@bug.Repo.GitHubUrl/fork" target="_blank" rel="noopener noreferrer">
-                                Fork <strong>@bug.Repo.Name</strong> on GitHub ↗
-                            </a>
+                            <span class="step-n">01</span>
+                            <span>
+                                <a href="@bug.Repo.GitHubUrl/fork" target="_blank" rel="noopener noreferrer">
+                                    Fork <strong style="color: var(--text-1);">@bug.Repo.Name</strong> on GitHub &#8599;
+                                </a>
+                            </span>
                         </li>
-                        <li>Clone your fork and run <code>dotnet test</code> to reproduce the failure</li>
-                        <li>Find and fix the bug, then push your commit</li>
-                        <li>Paste your fork URL below — we'll check the latest CI run</li>
+                        <li>
+                            <span class="step-n">02</span>
+                            <span>Clone your fork and run <code style="color: var(--accent);">dotnet test</code> to reproduce the failure</span>
+                        </li>
+                        <li>
+                            <span class="step-n">03</span>
+                            <span>Find and fix the bug, then push your commit</span>
+                        </li>
+                        <li>
+                            <span class="step-n">04</span>
+                            <span>Paste your fork URL below — the CI run is checked automatically</span>
+                        </li>
                     </ol>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Your fork URL</label>
-                        <input class="form-control" type="url"
-                               placeholder="https://github.com/your-username/@bug.Repo.Name.ToLower()"
-                               @bind="forkUrl" @bind:event="oninput" />
-                    </div>
+                    <label class="form-label">Your fork URL</label>
+                    <input class="form-control mb-3" type="url"
+                           placeholder="https://github.com/your-username/..."
+                           @bind="forkUrl" @bind:event="oninput" />
 
                     @if (submitError is not null)
                     {
-                        <div class="alert alert-danger py-2">@submitError</div>
+                        <div class="result-strip result-err">@submitError</div>
                     }
 
                     @if (verificationResult is not null)
                     {
-                        <div class="alert @(verificationResult.Passed ? "alert-success" : "alert-warning") py-2">
-                            <span class="fw-bold">@(verificationResult.Passed ? "✓ Passed" : "✗ Not yet")</span>
-                            — @verificationResult.Message
+                        <div class="result-strip @(verificationResult.Passed ? "result-pass" : "result-warn")">
+                            @(verificationResult.Passed ? "&#10003; PASS" : "&#10007; NOT YET")
+                            &mdash; @verificationResult.Message
                             @if (verificationResult.CommitSha is { Length: >= 7 } sha)
                             {
-                                <div class="small mt-1 text-muted">Checked commit: <code>@sha[..7]</code></div>
+                                <span style="color: var(--text-3); font-size: 11px; display: block; margin-top: 4px;">
+                                    checked commit: @sha[..7]
+                                </span>
                             }
                         </div>
                     }
 
-                    <button class="btn btn-primary" @onclick="SubmitFork"
-                            disabled="@(isSubmitting || string.IsNullOrWhiteSpace(forkUrl))">
-                        @if (isSubmitting)
-                        {
-                            <span class="spinner-border spinner-border-sm me-1" role="status" />
-                            <span>Checking...</span>
-                        }
-                        else
-                        {
-                            <span>Check my fork</span>
-                        }
-                    </button>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 14px;">
+                        <button class="btn btn-primary" @onclick="SubmitFork"
+                                disabled="@(isSubmitting || string.IsNullOrWhiteSpace(forkUrl))">
+                            @if (isSubmitting)
+                            {
+                                <span class="spinner-border me-1" role="status"></span>
+                                <span>Checking...</span>
+                            }
+                            else
+                            {
+                                <span>Check my fork</span>
+                            }
+                        </button>
 
-                    @if (verificationResult?.Passed == true)
-                    {
-                        <a href="/progress" class="btn btn-success ms-2">View my progress →</a>
-                    }
+                        @if (verificationResult?.Passed == true)
+                        {
+                            <a href="/progress" class="btn btn-success">View progress &#8594;</a>
+                        }
+                    </div>
                 </Authorized>
                 <NotAuthorized>
-                    <div class="alert alert-secondary">
-                        <a href="/login">Log in with GitHub</a> to submit your fix and track progress.
-                    </div>
+                    <p style="font-size: 13px; color: var(--text-2);">
+                        <a href="/login">Log in with GitHub</a>
+                        <span style="color: var(--text-3);"> to submit your fix and track progress.</span>
+                    </p>
                 </NotAuthorized>
             </AuthorizeView>
         </div>
@@ -188,11 +205,7 @@ else
 
         var state = await AuthState!;
         var userId = state.User.GetUserId();
-        if (userId is null)
-        {
-            submitError = "You must be logged in to submit.";
-            return;
-        }
+        if (userId is null) { submitError = "You must be logged in to submit."; return; }
 
         isSubmitting = true;
         verificationResult = null;
@@ -202,14 +215,13 @@ else
         {
             verificationResult = await VerificationService.VerifyForkAsync(forkUrl);
             var elapsed = (int)(DateTime.UtcNow - _startedAt).TotalSeconds;
-
             await AttemptService.RecordAttemptAsync(
                 userId.Value, bug.Id, forkUrl,
                 verificationResult.Passed, revealedCount, elapsed);
         }
         catch (Exception ex)
         {
-            submitError = $"Unexpected error: {ex.Message}";
+            submitError = $"Error: {ex.Message}";
         }
         finally
         {
@@ -217,11 +229,10 @@ else
         }
     }
 
-    private static string DifficultyColor(Difficulty d) => d switch
-    {
-        Difficulty.Easy => "success",
-        Difficulty.Medium => "warning",
-        Difficulty.Hard => "danger",
-        _ => "secondary"
+    private static string DiffClass(Difficulty d) => d switch {
+        Difficulty.Easy   => "diff-easy",
+        Difficulty.Medium => "diff-medium",
+        Difficulty.Hard   => "diff-hard",
+        _                 => "diff-medium"
     };
 }

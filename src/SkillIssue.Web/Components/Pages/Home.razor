@@ -4,51 +4,48 @@
 
 <PageTitle>Challenges — Skill Issue</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="mb-1">Debugging Challenges</h1>
-        <p class="text-muted mb-0">Navigate a real codebase, find the bug, fix it, prove it.</p>
-    </div>
+<div class="explorer-lede">
+    <h1 class="explorer-headline">Debugging Challenges</h1>
+    <p class="explorer-sub">Navigate a real codebase. Find the bug. Fix it. Prove it.</p>
 </div>
 
 @if (repos is null)
 {
-    <p class="text-muted">Loading challenges...</p>
+    <p class="pane-title">Loading...</p>
 }
 else if (repos.Count == 0)
 {
-    <p class="text-muted">No challenges available yet.</p>
+    <p style="color: var(--text-3); font-family: var(--mono); font-size: 13px;">No challenges seeded yet.</p>
 }
 else
 {
     @foreach (var repo in repos)
     {
-        <div class="card mb-4 shadow-sm">
-            <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="repo-block">
+            <div class="repo-block-head">
                 <div>
-                    <span class="fw-bold fs-5">@repo.Name</span>
-                    <span class="badge bg-secondary ms-2">@repo.Language</span>
+                    <span class="repo-name-mono">@repo.Name</span>
+                    <p class="repo-desc">@repo.Description</p>
                 </div>
-                <a href="@repo.GitHubUrl" target="_blank" rel="noopener noreferrer"
-                   class="btn btn-sm btn-outline-secondary">
-                    View on GitHub
-                </a>
+                <div class="repo-meta">
+                    <span class="repo-lang-tag">@repo.Language</span>
+                    <a href="@repo.GitHubUrl" target="_blank" rel="noopener noreferrer"
+                       class="btn btn-sm btn-outline-secondary">&#8599;</a>
+                </div>
             </div>
-            <div class="card-body">
-                <p class="card-text text-muted mb-3">@repo.Description</p>
-                <div class="list-group list-group-flush">
-                    @foreach (var bug in repo.Bugs.OrderBy(b => b.Difficulty))
-                    {
-                        <a href="/challenge/@bug.Id"
-                           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            <span>@bug.Title</span>
-                            <span class="badge bg-@DifficultyColor(bug.Difficulty) rounded-pill">
-                                @bug.Difficulty
-                            </span>
+
+            <ul class="file-list">
+                @foreach (var bug in repo.Bugs.OrderBy(b => b.Difficulty))
+                {
+                    <li>
+                        <a href="/challenge/@bug.Id" class="file-entry">
+                            <span class="file-chevron">&#8250;</span>
+                            <span class="file-name">@bug.Title</span>
+                            <span class="diff @DiffClass(bug.Difficulty)">@bug.Difficulty</span>
                         </a>
-                    }
-                </div>
-            </div>
+                    </li>
+                }
+            </ul>
         </div>
     }
 }
@@ -61,11 +58,10 @@ else
         repos = await ChallengeService.GetActiveReposWithBugsAsync();
     }
 
-    private static string DifficultyColor(Difficulty d) => d switch
-    {
-        Difficulty.Easy => "success",
-        Difficulty.Medium => "warning",
-        Difficulty.Hard => "danger",
-        _ => "secondary"
+    private static string DiffClass(Difficulty d) => d switch {
+        Difficulty.Easy   => "diff-easy",
+        Difficulty.Medium => "diff-medium",
+        Difficulty.Hard   => "diff-hard",
+        _                 => "diff-medium"
     };
 }
