@@ -364,9 +364,9 @@ h1,h2,h3,h4,h5,h6 { color: var(--t1); font-weight: 600; margin-top: 0; }
   padding: 3px 9px; border-radius: 3px; flex-shrink: 0;
 }
 
-.diff-badge-easy   { background: #1b2a1b; border: 1px solid #3a5830; }
-.diff-badge-medium { background: #2c1a0e; border: 1px solid #5a3018; }
-.diff-badge-hard   { background: #3a1828; border: 1px solid #6a2040; }
+.diff-badge-easy   { background: var(--bg-2); border: 1px solid #4a6038; }
+.diff-badge-medium { background: var(--bg-2); border: 1px solid #6a4028; }
+.diff-badge-hard   { background: var(--bg-2); border: 1px solid #6a2040; }
 
 /* Text label inside badge */
 .diff-badge-lbl {
@@ -564,9 +564,9 @@ h1,h2,h3,h4,h5,h6 { color: var(--t1); font-weight: 600; margin-top: 0; }
 .bg-light, .bg-secondary { background-color: var(--bg-3) !important; color: var(--t2) !important; }
 
 /* Bootstrap badge overrides */
-.badge.bg-success   { background: #1b2a1b !important; color: #8aaa7a !important; border: 1px solid #3a5830; }
-.badge.bg-warning   { background: #2c1a0e !important; color: var(--gold) !important; border: 1px solid var(--gold-lo); }
-.badge.bg-danger    { background: #3a1828 !important; color: #c46070 !important; border: 1px solid #6a2040; }
+.badge.bg-success   { background: var(--bg-2) !important; color: #8aaa7a !important; border: 1px solid #4a6038; }
+.badge.bg-warning   { background: var(--bg-2) !important; color: var(--gold) !important; border: 1px solid var(--gold-lo); }
+.badge.bg-danger    { background: var(--bg-2) !important; color: #c46070 !important; border: 1px solid #6a2040; }
 .badge.bg-secondary { background: var(--bg-4) !important; color: var(--t2) !important; border: 1px solid var(--line); }
 
 /* Spinner */
