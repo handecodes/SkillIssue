@@ -51,6 +51,10 @@ public partial class GitHubVerificationService(HttpClient httpClient) : IGitHubV
         {
             return new VerificationResult(false, null, "GitHub API request timed out. Please try again.");
         }
+        catch (System.Text.Json.JsonException)
+        {
+            return new VerificationResult(false, null, "Unexpected response from GitHub API. Please try again.");
+        }
     }
 
     private sealed class WorkflowRunsResponse

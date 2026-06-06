@@ -81,6 +81,76 @@ public class GitHubVerificationServiceTests
         Assert.Contains("No completed workflow runs", result.Message);
     }
 
+    [Theory]
+    [InlineData("https://github.com/owner/repo.git")]
+    [InlineData("https://github.com/owner/repo.git/")]
+    [InlineData("https://github.com/owner/repo/")]
+    public async Task VerifyForkAsync_AcceptsValidUrlVariants(string url)
+    {
+        var body = JsonSerializer.Serialize(new
+        {
+            workflow_runs = new[]
+            {
+                new { conclusion = "success", head_sha = "abc123", status = "completed" }
+            }
+        });
+        var sut = BuildService(HttpStatusCode.OK, body);
+
+        var result = await sut.VerifyForkAsync(url);
+
+        Assert.True(result.Passed);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.Forbidden)]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    [InlineData(HttpStatusCode.ServiceUnavailable)]
+    public async Task VerifyForkAsync_ReturnsFailure_OnNon200NonNotFoundStatus(HttpStatusCode statusCode)
+    {
+        var sut = BuildService(statusCode, "{}");
+
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo");
+
+        Assert.False(result.Passed);
+        Assert.Contains(((int)statusCode).ToString(), result.Message);
+    }
+
+    [Fact]
+    public async Task VerifyForkAsync_ReturnsFailure_WhenResponseBodyIsMalformedJson()
+    {
+        var sut = BuildService(HttpStatusCode.OK, "not json at all {{{");
+
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo");
+
+        Assert.False(result.Passed);
+    }
+
+    [Fact]
+    public async Task VerifyForkAsync_ReturnsFailure_OnHttpRequestException()
+    {
+        var handler = new ThrowingHttpHandler(new HttpRequestException("Network error"));
+        var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.github.com/") };
+        var sut = new GitHubVerificationService(client);
+
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo");
+
+        Assert.False(result.Passed);
+        Assert.Contains("Network error", result.Message);
+    }
+
+    [Fact]
+    public async Task VerifyForkAsync_ReturnsFailure_OnTimeout()
+    {
+        var handler = new ThrowingHttpHandler(new TaskCanceledException("Request timed out"));
+        var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.github.com/") };
+        var sut = new GitHubVerificationService(client);
+
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo");
+
+        Assert.False(result.Passed);
+        Assert.Contains("timed out", result.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static GitHubVerificationService BuildService(HttpStatusCode statusCode, string responseBody)
     {
         var handler = new FakeHttpHandler(statusCode, responseBody);
@@ -98,5 +168,11 @@ public class GitHubVerificationServiceTests
             };
             return Task.FromResult(response);
         }
+    }
+
+    private sealed class ThrowingHttpHandler(Exception exception) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+            => Task.FromException<HttpResponseMessage>(exception);
     }
 }
