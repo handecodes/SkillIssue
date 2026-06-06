@@ -83,13 +83,55 @@ else
         }
     </section>
 
-    <section class="terminal-panel" aria-labelledby="section-submit">
+    <section class="terminal-panel" aria-labelledby="tab-terminal">
         <div class="terminal-tabs" role="tablist" aria-label="Terminal panels">
-            <span class="terminal-tab-btn" role="tab" aria-selected="false">Problems</span>
-            <span class="terminal-tab-btn" role="tab" aria-selected="false">Output</span>
-            <span class="terminal-tab-btn active" role="tab" aria-selected="true" id="section-submit">Terminal</span>
+            <button class="terminal-tab-btn @(activeTab == "problems" ? "active" : "")"
+                    role="tab"
+                    id="tab-problems"
+                    aria-selected="@(activeTab == "problems" ? "true" : "false")"
+                    aria-controls="panel-problems"
+                    tabindex="@(activeTab == "problems" ? 0 : -1)"
+                    @ref="tabRefProblems"
+                    @onclick='() => ActivateTab("problems")'
+                    @onkeydown='e => HandleTabKey(e, "problems")'>Problems</button>
+            <button class="terminal-tab-btn @(activeTab == "output" ? "active" : "")"
+                    role="tab"
+                    id="tab-output"
+                    aria-selected="@(activeTab == "output" ? "true" : "false")"
+                    aria-controls="panel-output"
+                    tabindex="@(activeTab == "output" ? 0 : -1)"
+                    @ref="tabRefOutput"
+                    @onclick='() => ActivateTab("output")'
+                    @onkeydown='e => HandleTabKey(e, "output")'>Output</button>
+            <button class="terminal-tab-btn @(activeTab == "terminal" ? "active" : "")"
+                    role="tab"
+                    id="tab-terminal"
+                    aria-selected="@(activeTab == "terminal" ? "true" : "false")"
+                    aria-controls="panel-terminal"
+                    tabindex="@(activeTab == "terminal" ? 0 : -1)"
+                    @ref="tabRefTerminal"
+                    @onclick='() => ActivateTab("terminal")'
+                    @onkeydown='e => HandleTabKey(e, "terminal")'>Terminal</button>
         </div>
-        <div class="terminal-body" role="tabpanel" aria-labelledby="section-submit">
+
+        <div id="panel-problems" role="tabpanel" aria-labelledby="tab-problems"
+             class="terminal-body" hidden="@(activeTab != "problems")">
+            @foreach (var t in bug.FailingTests.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+            {
+                <div class="problem-item">
+                    <span class="code-panel-tag err" aria-hidden="true">&#9747;</span>
+                    <code>@t</code>
+                </div>
+            }
+        </div>
+
+        <div id="panel-output" role="tabpanel" aria-labelledby="tab-output"
+             class="terminal-body" hidden="@(activeTab != "output")">
+            <pre class="output-pre">@bug.ErrorMessage</pre>
+        </div>
+
+        <div id="panel-terminal" role="tabpanel" aria-labelledby="tab-terminal"
+             class="terminal-body" hidden="@(activeTab != "terminal")">
             <p class="terminal-prompt" aria-hidden="true">
                 <span class="prompt-path">~/skill-issue</span>
                 <span style="color: var(--t3);"> $ </span>
@@ -194,6 +236,33 @@ else
     private VerificationResult? verificationResult;
     private string? submitError;
     private DateTime _startedAt;
+
+    // Terminal tabs
+    private string activeTab = "terminal";
+    private static readonly string[] TabOrder = ["problems", "output", "terminal"];
+    private ElementReference tabRefProblems, tabRefOutput, tabRefTerminal;
+
+    private void ActivateTab(string tab) => activeTab = tab;
+
+    private async Task HandleTabKey(KeyboardEventArgs e, string current)
+    {
+        var idx = Array.IndexOf(TabOrder, current);
+        string? next = e.Key switch {
+            "ArrowRight" or "ArrowDown" => TabOrder[(idx + 1) % TabOrder.Length],
+            "ArrowLeft"  or "ArrowUp"   => TabOrder[(idx - 1 + TabOrder.Length) % TabOrder.Length],
+            "Home"  => TabOrder[0],
+            "End"   => TabOrder[^1],
+            _ => null
+        };
+        if (next is null) return;
+        activeTab = next;
+        var target = next switch {
+            "problems" => tabRefProblems,
+            "output"   => tabRefOutput,
+            _          => tabRefTerminal,
+        };
+        await target.FocusAsync();
+    }
 
     protected override async Task OnInitializedAsync()
     {
