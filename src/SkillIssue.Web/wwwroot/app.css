@@ -330,33 +330,33 @@ h1,h2,h3,h4,h5,h6 { color: var(--t1); font-weight: 600; margin-top: 0; }
 
 /* ── Difficulty dots (DifficultyDots component) ──────── */
 
-/* Container */
 .diff-dots {
   display: inline-flex; align-items: center; gap: 3px;
 }
 
-/* Individual dot */
 .dd-dot {
   width: 6px; height: 6px; border-radius: 50%;
   display: inline-block; flex-shrink: 0;
 }
 
-/* Colours per difficulty — applied via parent badge class or inline */
-.diff-badge-easy   .dd-on  { background: #8aaa7a; }
-.diff-badge-easy   .dd-off { background: #8aaa7a; opacity: .18; }
-.diff-badge-medium .dd-on  { background: #d4956a; }
-.diff-badge-medium .dd-off { background: #d4956a; opacity: .18; }
-.diff-badge-hard   .dd-on  { background: #d07888; }
-.diff-badge-hard   .dd-off { background: #d07888; opacity: .18; }
+/* ── Badge dot colors — explicit per difficulty, no currentColor conflict ── */
+/* Filled dots */
+.diff-badge-easy   .dd-on { background: #8aaa7a; }
+.diff-badge-medium .dd-on { background: #d4956a; }
+.diff-badge-hard   .dd-on { background: #c46070; }
 
-/* Inline (no badge wrapper) — sidebar use */
-.diff-dots .dd-on  { background: currentColor; }
-.diff-dots .dd-off { background: currentColor; opacity: .18; }
+/* Empty/dim dots: same hue at low opacity */
+.diff-badge-easy   .dd-off { background: #8aaa7a; opacity: .22; }
+.diff-badge-medium .dd-off { background: #d4956a; opacity: .22; }
+.diff-badge-hard   .dd-off { background: #c46070; opacity: .22; }
 
-/* Colour for standalone .diff-dots (sidebar files inherit link color) */
-.sidebar-file .diff-dots { color: var(--t3); }
-.sidebar-file:hover .diff-dots { color: var(--t2); }
-.sidebar-file.active .diff-dots { color: var(--gold); }
+/* ── Sidebar dot colors — follow the link's own state ── */
+.sidebar-file          .dd-on  { background: var(--t3); }
+.sidebar-file:hover    .dd-on  { background: var(--t2); }
+.sidebar-file.active   .dd-on  { background: var(--gold); }
+.sidebar-file          .dd-off { background: var(--t3); opacity: .25; }
+.sidebar-file:hover    .dd-off { background: var(--t2); opacity: .22; }
+.sidebar-file.active   .dd-off { background: var(--gold); opacity: .22; }
 
 /* Badge pill */
 .diff-badge {
