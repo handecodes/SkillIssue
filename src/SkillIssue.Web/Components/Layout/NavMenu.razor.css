@@ -8,3 +8,18 @@
 ::deep .sidebar-link.active .sidebar-icon {
     color: var(--gold);
 }
+
+/* Logout form: invisible wrapper so button sits in the nav flow */
+::deep .logout-form {
+    display: contents;
+}
+
+/* Reset browser button defaults so .sidebar-link styles fully apply */
+::deep .sidebar-logout-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+    width: 100%;
+}

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using AspNet.Security.OAuth.GitHub;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
@@ -82,8 +83,9 @@ app.MapGet("/login", (string? returnUrl) =>
         new AuthenticationProperties { RedirectUri = returnUrl ?? "/" },
         [GitHubAuthenticationDefaults.AuthenticationScheme]));
 
-app.MapGet("/logout", async (HttpContext ctx) =>
+app.MapPost("/logout", async (HttpContext ctx, IAntiforgery antiforgery) =>
 {
+    await antiforgery.ValidateRequestAsync(ctx);
     await ctx.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     return Results.Redirect("/");
 });
@@ -93,11 +95,21 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 // Apply migrations and seed on startup
+var startupLogger = app.Services.GetRequiredService<ILoggerFactory>()
+    .CreateLogger("Startup");
 var factory = app.Services.GetRequiredService<IDbContextFactory<AppDbContext>>();
 await using (var db = await factory.CreateDbContextAsync())
 {
-    await db.Database.MigrateAsync();
-    await DbSeeder.SeedAsync(db);
+    try
+    {
+        await db.Database.MigrateAsync();
+        await DbSeeder.SeedAsync(db);
+    }
+    catch (Exception ex)
+    {
+        startupLogger.LogCritical(ex, "Database startup failed — the application cannot start.");
+        throw;
+    }
 }
 
 app.Run();

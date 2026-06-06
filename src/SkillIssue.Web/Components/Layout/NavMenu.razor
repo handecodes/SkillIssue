@@ -66,10 +66,13 @@
                         @context.User.FindFirstValue(ClaimTypes.Name)
                     </span>
                 </div>
-                <a class="sidebar-link" href="/logout">
-                    <i class="sidebar-icon" aria-hidden="true">&#8592;</i>
-                    <span>Log out</span>
-                </a>
+                <form method="post" action="/logout" class="logout-form">
+                    <AntiforgeryToken />
+                    <button type="submit" class="sidebar-link sidebar-logout-btn">
+                        <i class="sidebar-icon" aria-hidden="true">&#8592;</i>
+                        <span>Log out</span>
+                    </button>
+                </form>
             </Authorized>
             <NotAuthorized>
                 <a class="sidebar-link" href="/login">
