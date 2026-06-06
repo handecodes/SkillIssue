@@ -60,7 +60,7 @@ else
                     <span class="code-panel-tag">Failing tests</span>
                 </div>
                 <div class="code-panel-body">
-                    @foreach (var t in bug.FailingTests.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+                    @foreach (var t in bug.FailingTests.Select(f => f.TestName))
                     {
                         <code>@t</code>
                     }
@@ -127,7 +127,7 @@ else
 
         <div id="panel-problems" role="tabpanel" aria-labelledby="tab-problems"
              class="terminal-body" hidden="@(activeTab != "problems")">
-            @foreach (var t in bug.FailingTests.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+            @foreach (var t in bug.FailingTests.Select(f => f.TestName))
             {
                 <div class="problem-item">
                     <span class="code-panel-tag err" aria-hidden="true">&#9747;</span>

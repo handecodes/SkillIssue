@@ -89,7 +89,7 @@ public class AttemptServiceTests : IDisposable
     {
         await using var db = await _factory.CreateDbContextAsync();
         var repo = new Repo { Name = "R", GitHubUrl = "http://r" };
-        var bug = new Bug { Title = "B", Repo = repo, FailingTests = "T1" };
+        var bug = new Bug { Title = "B", Repo = repo };
         var user1 = new User { GitHubId = "gh-u1", Login = "u1", DisplayName = "U1", CreatedAt = DateTime.UtcNow };
         var user2 = new User { GitHubId = "gh-u2", Login = "u2", DisplayName = "U2", CreatedAt = DateTime.UtcNow };
         db.Repos.Add(repo);
@@ -112,8 +112,8 @@ public class AttemptServiceTests : IDisposable
     {
         await using var db = await _factory.CreateDbContextAsync();
         var repo = new Repo { Name = "Multi", GitHubUrl = "http://m" };
-        repo.Bugs.Add(new Bug { Title = "Bug1", FailingTests = "T1" });
-        repo.Bugs.Add(new Bug { Title = "Bug2", FailingTests = "T2" });
+        repo.Bugs.Add(new Bug { Title = "Bug1" });
+        repo.Bugs.Add(new Bug { Title = "Bug2" });
         var user = new User { GitHubId = "gh-multi", Login = "m", DisplayName = "M", CreatedAt = DateTime.UtcNow };
         db.Repos.Add(repo);
         db.Users.Add(user);
@@ -130,8 +130,8 @@ public class AttemptServiceTests : IDisposable
     {
         await using var db = await _factory.CreateDbContextAsync();
         var repo = new Repo { Name = "R2", GitHubUrl = "http://r2" };
-        var bug1 = new Bug { Title = "B1", Repo = repo, FailingTests = "T1" };
-        var bug2 = new Bug { Title = "B2", Repo = repo, FailingTests = "T2" };
+        var bug1 = new Bug { Title = "B1", Repo = repo };
+        var bug2 = new Bug { Title = "B2", Repo = repo };
         var user = new User { GitHubId = "gh-s2", Login = "s2", DisplayName = "S2", CreatedAt = DateTime.UtcNow };
         db.Bugs.AddRange(bug1, bug2);
         db.Users.Add(user);
@@ -150,7 +150,7 @@ public class AttemptServiceTests : IDisposable
     {
         await using var db = await _factory.CreateDbContextAsync();
         var repo = new Repo { Name = "TestRepo", GitHubUrl = "http://test" };
-        var bug = new Bug { Title = "Test Bug", Repo = repo, FailingTests = "T1" };
+        var bug = new Bug { Title = "Test Bug", Repo = repo };
         var user = new User { GitHubId = "gh42", Login = "tester", DisplayName = "Tester", CreatedAt = DateTime.UtcNow };
         db.Repos.Add(repo);
         db.Bugs.Add(bug);

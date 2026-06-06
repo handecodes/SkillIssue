@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Repo> Repos => Set<Repo>();
     public DbSet<Bug> Bugs => Set<Bug>();
     public DbSet<HintTier> HintTiers => Set<HintTier>();
+    public DbSet<FailingTest> FailingTests => Set<FailingTest>();
     public DbSet<Attempt> Attempts => Set<Attempt>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -21,6 +22,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasOne(h => h.Bug)
             .WithMany(b => b.Hints)
             .HasForeignKey(h => h.BugId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<FailingTest>()
+            .HasOne(f => f.Bug)
+            .WithMany(b => b.FailingTests)
+            .HasForeignKey(f => f.BugId)
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Attempt>()

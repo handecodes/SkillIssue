@@ -25,7 +25,10 @@ public static class DbSeeder
                     Brief = "\"customer name 1\".Pascalize() returns \"CustomerName\" instead of \"CustomerName1\". The regex pattern that drives Pascalize() and Camelize() only matches ASCII letters as word-start characters, so digits and symbols after a space, underscore, or hyphen are silently discarded. Fix the pattern so every character type is preserved.\n\nFork the repo, find and fix the pattern, then push — the existing Humanizer test suite will verify the result.\n\nSource: Humanizr/Humanizer (MIT) — fix introduced in PR #1684, commit b4286ce.",
                     ErrorMessage = "Assert.Equal(\"CustomerName1\", \"customer name 1\".Pascalize())\nExpected: CustomerName1\nActual:   CustomerName",
                     Difficulty = Difficulty.Easy,
-                    FailingTests = "Humanizer.Tests.InflectorTests.PascalizeTests (InlineData: \"customer name 1\", \"CustomerName1\")",
+                    FailingTests =
+                    [
+                        new FailingTest { Order = 1, TestName = "Humanizer.Tests.InflectorTests.PascalizeTests (InlineData: \"customer name 1\", \"CustomerName1\")" }
+                    ],
                     Hints =
                     [
                         new HintTier { Order = 1, Label = "Nudge", Content = "Pascalize() works perfectly for letters-only words like \"customer name\". Try it on a string where the last word starts with a digit, like \"customer name 1\". The digit disappears from the output — why might that be?" },
@@ -39,7 +42,10 @@ public static class DbSeeder
                     Brief = "DateOnly.FromDateTime(DateTime.Today.AddMonths(-24)).Humanize() returns \"1 year ago\" instead of \"2 years ago\". The algorithm subtracts .DayOfYear values to get the number of days between two dates, but DayOfYear is the day's position within its own year (1–366) — not an absolute day count. Two dates with the same calendar day in different years produce a day difference of 0, collapsing the year calculation.\n\nFork the repo, fix the day-difference calculation, and push.\n\nSource: Humanizr/Humanizer (MIT) — fix introduced in PR #1228, commit b8ace55.",
                     ErrorMessage = "Assert.Equal(\"2 years ago\", DateOnly.FromDateTime(baseDate.AddMonths(-24)).Humanize(baseDate))\nExpected: 2 years ago\nActual:   1 year ago",
                     Difficulty = Difficulty.Medium,
-                    FailingTests = "Humanizer.Tests.DateOnlyHumanizeTests.DefaultStrategy_YearsAgo",
+                    FailingTests =
+                    [
+                        new FailingTest { Order = 1, TestName = "Humanizer.Tests.DateOnlyHumanizeTests.DefaultStrategy_YearsAgo" }
+                    ],
                     Hints =
                     [
                         new HintTier { Order = 1, Label = "Nudge", Content = "The bug only shows up when the two dates are in different calendar years. Try humanizing a DateOnly that is exactly 24 months ago — the result might say \"1 year ago\". Think about how the number of days between dates is being computed." },
@@ -53,7 +59,10 @@ public static class DbSeeder
                     Brief = "999500d.ToMetric(decimals: 0) returns \"1000k\" instead of \"1M\". When the scaled number rounds up to exactly 1000 (e.g. 999.5 rounds to 1000 at the kilo prefix), the method never carries to the next SI prefix. Fix the method to detect this boundary condition and increment the prefix.\n\nFork the repo, add the boundary check, and push.\n\nSource: Humanizr/Humanizer (MIT) — fix introduced in PR #1570, commit 6d7dfda.",
                     ErrorMessage = "Assert.Equal(\"1M\", 999500d.ToMetric(decimals: 0))\nExpected: 1M\nActual:   1000k",
                     Difficulty = Difficulty.Medium,
-                    FailingTests = "Humanizer.Tests.MetricNumeralTests.ToMetric (InlineData: \"1M\", 999500d, null, 0)",
+                    FailingTests =
+                    [
+                        new FailingTest { Order = 1, TestName = "Humanizer.Tests.MetricNumeralTests.ToMetric (InlineData: \"1M\", 999500d, null, 0)" }
+                    ],
                     Hints =
                     [
                         new HintTier { Order = 1, Label = "Nudge", Content = "999500.ToMetric(decimals: 0) chooses the kilo (k) prefix and rounds 999.5 → 1000. But \"1000k\" is not a valid metric representation — \"1M\" is. The method never checks whether rounding caused the number to overflow its chosen prefix. Where in the method should that check go?" },
@@ -67,7 +76,10 @@ public static class DbSeeder
                     Brief = "\"123\".Titleize() returns \"\" instead of \"123\". Titleize() delegates to Humanize(), which in turn calls FromPascalCase(). When the input contains no ASCII letters, FromPascalCase()'s regex finds no matches and returns an empty string — and Titleize() returns that empty string rather than the original input.\n\nFork the repo, fix Titleize() to preserve the original input when humanization produces nothing, and push.\n\nSource: Humanizr/Humanizer (MIT) — fix introduced in PR #1611, commit 535de3f.",
                     ErrorMessage = "Assert.Equal(\"123\", \"123\".Titleize())\nExpected: 123\nActual:   (empty string)",
                     Difficulty = Difficulty.Medium,
-                    FailingTests = "Humanizer.Tests.InflectorTests.TitleizeShouldPreserveUnrecognizedCharacters (InlineData: \"123\", \"123\")",
+                    FailingTests =
+                    [
+                        new FailingTest { Order = 1, TestName = "Humanizer.Tests.InflectorTests.TitleizeShouldPreserveUnrecognizedCharacters (InlineData: \"123\", \"123\")" }
+                    ],
                     Hints =
                     [
                         new HintTier { Order = 1, Label = "Nudge", Content = "\"Pascal Case\".Titleize() works fine, but \"123\".Titleize() returns an empty string. Titleize() is a thin wrapper — trace what it calls internally. At what step does the content get lost?" },
@@ -93,7 +105,10 @@ public static class DbSeeder
                     Brief = "JsonConvert.DeserializeObject<TimeOnly>(\"\\\"23:59\\\"\") throws a FormatException. The deserialization path uses TimeOnly.ParseExact with the format \"HH:mm:ss.FFFFFFF\", which requires seconds and fractional seconds to be present. A time string that omits seconds — a perfectly valid ISO 8601 time — cannot be parsed.\n\nFork the repo, fix the parsing call so it handles all common TimeOnly string formats, and push.\n\nSource: JamesNK/Newtonsoft.Json (MIT) — fix introduced in PR #2811, commit ba92aa9.",
                     ErrorMessage = "System.FormatException: String '23:59' was not recognized as a valid TimeOnly.\n  at Newtonsoft.Json.Utilities.ConvertUtils.TryConvertInternal(...)",
                     Difficulty = Difficulty.Easy,
-                    FailingTests = "Newtonsoft.Json.Tests.Serialization.TimeOnlyTests.Deserialize_WithoutSeconds",
+                    FailingTests =
+                    [
+                        new FailingTest { Order = 1, TestName = "Newtonsoft.Json.Tests.Serialization.TimeOnlyTests.Deserialize_WithoutSeconds" }
+                    ],
                     Hints =
                     [
                         new HintTier { Order = 1, Label = "Nudge", Content = "Deserializing \"23:59:59\" works. Deserializing \"23:59\" (no seconds) throws a FormatException. Both are valid time strings — the difference is the format. Find where the library parses TimeOnly values from strings." },

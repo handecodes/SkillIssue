@@ -36,7 +36,7 @@ public class ChallengeServiceTests : IDisposable
         await SeedAsync(db =>
         {
             var repo = new Repo { Name = "R", GitHubUrl = "http://r", IsActive = true };
-            repo.Bugs.Add(new Bug { Title = "Bug A", FailingTests = "T1" });
+            repo.Bugs.Add(new Bug { Title = "Bug A", FailingTests = [new FailingTest { Order = 1, TestName = "T1" }] });
             db.Repos.Add(repo);
         });
 

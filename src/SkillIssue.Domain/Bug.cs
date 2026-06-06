@@ -9,7 +9,7 @@ public class Bug
     public string Brief { get; set; } = "";
     public string ErrorMessage { get; set; } = "";
     public Difficulty Difficulty { get; set; }
-    public string FailingTests { get; set; } = "";
+    public List<FailingTest> FailingTests { get; set; } = [];
     public List<HintTier> Hints { get; set; } = [];
     public List<Attempt> Attempts { get; set; } = [];
 }
