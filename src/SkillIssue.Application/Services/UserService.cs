@@ -49,9 +49,4 @@ public class UserService(IDbContextFactory<AppDbContext> factory) : IUserService
         }
     }
 
-    public async Task<User?> GetByIdAsync(int userId)
-    {
-        await using var db = await factory.CreateDbContextAsync();
-        return await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
-    }
 }

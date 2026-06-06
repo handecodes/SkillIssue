@@ -60,6 +60,8 @@ public class AttemptService(IDbContextFactory<AppDbContext> factory) : IAttemptS
         {
             var repoBugIds = repo.Bugs.Select(b => b.Id).ToHashSet();
             var repoAttempts = attempts.Where(a => repoBugIds.Contains(a.BugId)).ToList();
+            // HintsUsed is cumulative across all attempts, not just the final one.
+            // Two attempts using 2 and 1 hints respectively → HintsUsed = 3.
             return new RepoProgress(
                 RepoId: repo.Id,
                 RepoName: repo.Name,

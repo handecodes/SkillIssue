@@ -75,25 +75,5 @@ public class UserServiceTests : IDisposable
         Assert.Null(user.AvatarUrl);
     }
 
-    [Fact]
-    public async Task GetByIdAsync_ReturnsUser_WhenExists()
-    {
-        var created = await _sut.GetOrCreateUserAsync("gh40", "frank", "Frank", null);
-
-        var fetched = await _sut.GetByIdAsync(created.Id);
-
-        Assert.NotNull(fetched);
-        Assert.Equal(created.Id, fetched.Id);
-        Assert.Equal("frank", fetched.Login);
-    }
-
-    [Fact]
-    public async Task GetByIdAsync_ReturnsNull_WhenUserDoesNotExist()
-    {
-        var result = await _sut.GetByIdAsync(99999);
-
-        Assert.Null(result);
-    }
-
     public void Dispose() => _factory.Dispose();
 }
