@@ -290,7 +290,7 @@ else
 
         try
         {
-            verificationResult = await VerificationService.VerifyForkAsync(forkUrl);
+            verificationResult = await VerificationService.VerifyForkAsync(forkUrl, bug.Repo.GitHubUrl);
             var elapsed = (int)(DateTime.UtcNow - _startedAt).TotalSeconds;
             await AttemptService.RecordAttemptAsync(
                 userId.Value, bug.Id, forkUrl,

@@ -29,8 +29,24 @@ public class UserService(IDbContextFactory<AppDbContext> factory) : IUserService
             CreatedAt = DateTime.UtcNow
         };
         db.Users.Add(user);
-        await db.SaveChangesAsync();
-        return user;
+        try
+        {
+            await db.SaveChangesAsync();
+            return user;
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+        {
+            // Concurrent login: another request inserted the same GitHub user first.
+            // Open a fresh context (the faulted one can't be reused) and re-read.
+            await using var retryDb = await factory.CreateDbContextAsync();
+            var existing = await retryDb.Users.FirstOrDefaultAsync(u => u.GitHubId == githubId);
+            if (existing is null) throw;
+            existing.Login = login;
+            existing.DisplayName = displayName;
+            existing.AvatarUrl = avatarUrl;
+            await retryDb.SaveChangesAsync();
+            return existing;
+        }
     }
 
     public async Task<User?> GetByIdAsync(int userId)

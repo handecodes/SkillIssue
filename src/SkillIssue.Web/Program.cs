@@ -14,9 +14,11 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "Data Source=skillissue.db";
 
+var githubPat = builder.Configuration["GitHub:PatToken"];
+
 builder.Services
     .AddDataServices(connectionString)
-    .AddApplicationServices();
+    .AddApplicationServices(githubPat);
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

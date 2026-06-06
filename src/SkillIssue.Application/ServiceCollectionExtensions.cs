@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using Microsoft.Extensions.DependencyInjection;
 using SkillIssue.Application.Services;
 
@@ -5,7 +6,7 @@ namespace SkillIssue.Application;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services, string? githubPat = null)
     {
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IChallengeService, ChallengeService>();
@@ -18,6 +19,8 @@ public static class ServiceCollectionExtensions
             client.DefaultRequestHeaders.Add("Accept", "application/vnd.github+json");
             client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
             client.Timeout = TimeSpan.FromSeconds(15);
+            if (!string.IsNullOrWhiteSpace(githubPat))
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", githubPat);
         });
 
         return services;
