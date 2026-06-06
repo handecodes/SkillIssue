@@ -3,6 +3,8 @@ using AspNet.Security.OAuth.GitHub;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Server;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using SkillIssue.Application;
 using SkillIssue.Application.Services;
@@ -28,6 +30,9 @@ builder.Services
         options.LoginPath = "/login";
         options.LogoutPath = "/logout";
         options.AccessDeniedPath = "/login";
+        options.Cookie.HttpOnly     = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite     = SameSiteMode.Lax;
     })
     .AddGitHub(options =>
     {
@@ -64,13 +69,37 @@ builder.Services.AddCascadingAuthenticationState();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.Configure<CircuitOptions>(opts =>
+    opts.DetailedErrors = builder.Environment.IsDevelopment());
 
 var app = builder.Build();
+
+// Must be first: populates HttpContext.Connection.RemoteIpAddress and scheme
+// from X-Forwarded-For / X-Forwarded-Proto set by the reverse proxy.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseHsts();
 }
+app.UseHttpsRedirection();
+
+// Security response headers applied to every response including static assets.
+// CSP is intentionally omitted: Blazor Server requires 'unsafe-inline' scripts
+// for its SignalR bootstrap; a meaningful CSP needs nonce injection (future work).
+app.Use(async (ctx, next) =>
+{
+    ctx.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    ctx.Response.Headers["X-Frame-Options"]        = "SAMEORIGIN";
+    ctx.Response.Headers["Referrer-Policy"]        = "strict-origin-when-cross-origin";
+    ctx.Response.Headers["Permissions-Policy"]     = "camera=(), microphone=(), geolocation=()";
+    await next();
+});
+
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 
 app.UseAuthentication();
@@ -79,9 +108,14 @@ app.UseAntiforgery();
 
 // Auth endpoints — handled via regular HTTP, not Blazor
 app.MapGet("/login", (string? returnUrl) =>
-    Results.Challenge(
+{
+    // Reject non-local return URLs to prevent open redirect attacks.
+    if (returnUrl is not null && !Uri.TryCreate(returnUrl, UriKind.Relative, out _))
+        returnUrl = "/";
+    return Results.Challenge(
         new AuthenticationProperties { RedirectUri = returnUrl ?? "/" },
-        [GitHubAuthenticationDefaults.AuthenticationScheme]));
+        [GitHubAuthenticationDefaults.AuthenticationScheme]);
+});
 
 app.MapPost("/logout", async (HttpContext ctx, IAntiforgery antiforgery) =>
 {

@@ -9,7 +9,7 @@ namespace SkillIssue.Application.Services;
 
 public partial class GitHubVerificationService(HttpClient httpClient) : IGitHubVerificationService
 {
-    [GeneratedRegex(@"github\.com/([^/]+)/([^/?\s]+?)(?:\.git)?/?$")]
+    [GeneratedRegex(@"^https://github\.com/([^/]+)/([^/?\s]+?)(?:\.git)?/?$")]
     private static partial Regex ForkUrlRegex();
 
     public async Task<VerificationResult> VerifyForkAsync(string forkUrl, string upstreamUrl)

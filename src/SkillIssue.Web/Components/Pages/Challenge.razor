@@ -251,6 +251,7 @@ else
     private VerificationResult? verificationResult;
     private string? submitError;
     private DateTime _startedAt;
+    private DateTime _lastSubmit = DateTime.MinValue;
 
     // Terminal tabs
     private string activeTab = "terminal";
@@ -299,6 +300,13 @@ else
         var state = await AuthState!;
         var userId = state.User.GetUserId();
         if (userId is null) { submitError = "You must be logged in to submit."; return; }
+
+        if (DateTime.UtcNow - _lastSubmit < TimeSpan.FromSeconds(10))
+        {
+            submitError = "Please wait a moment before submitting again.";
+            return;
+        }
+        _lastSubmit = DateTime.UtcNow;
 
         isSubmitting = true;
         verificationResult = null;
