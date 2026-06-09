@@ -657,3 +657,161 @@ h1,h2,h3,h4,h5,h6 { color: var(--t1); font-weight: 600; margin-top: 0; }
   .ide-tabbar  { left: 0; }
   .ide-editor  { left: 0; padding: 16px 16px 40px; }
 }
+
+/* ── Landing page (logged-out, full-width, no sidebar) */
+
+/* Reset editor area to full viewport when sidebar/tabbar are hidden */
+.ide-editor--landing {
+  left: 0 !important;
+  top: 0 !important;
+  padding: 0 !important;
+}
+
+/* Landing fills the full editor area as a normal flow element */
+.land-fullpage {
+  min-height: calc(100vh - var(--statusbar-h));
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tab bar — same look as .ide-tabbar but full-width and a flex child */
+.land-tabbar {
+  height: var(--tabbar-h);
+  background: var(--bg-bar);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+}
+
+/* Centered content area */
+.land-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 24px 36px;
+}
+
+.land-inner {
+  max-width: 680px;
+  width: 100%;
+  text-align: center;
+}
+
+/* Big two-line headline */
+.land-headline {
+  font-family: var(--mono);
+  font-size: clamp(26px, 3.8vw, 52px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+  margin: 0 0 16px;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.land-hl-1 { color: var(--t1); }
+.land-hl-2 { color: var(--gold); }
+
+.land-sub {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--t2);
+  margin: 0 0 28px;
+  line-height: 1.5;
+}
+
+/* Outlined terminal-style CTA button */
+.land-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gold);
+  background: transparent;
+  border: 1px solid var(--gold);
+  padding: 9px 22px;
+  border-radius: 3px;
+  text-decoration: none;
+  transition: background .12s, color .12s;
+  margin-bottom: 32px;
+}
+
+.land-btn:hover { background: var(--gold); color: #160a04; }
+.land-btn:focus-visible { outline: 2px solid var(--gold) !important; outline-offset: 2px !important; }
+
+/* Terminal preview panel */
+.land-preview {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  text-align: left;
+  max-width: 560px;
+  margin: 0 auto;
+  box-shadow: 0 4px 24px rgba(0,0,0,.35);
+}
+
+.land-pbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--bg-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.land-pdot {
+  width: 9px; height: 9px;
+  border-radius: 50%; flex-shrink: 0;
+}
+
+.land-pdot-r { background: #c0392b; }
+.land-pdot-y { background: #c09a2b; }
+.land-pdot-g { background: #27ae60; }
+
+.land-ptitle {
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  letter-spacing: 1.2px; text-transform: uppercase; color: var(--t3);
+  margin-left: 8px;
+}
+
+.land-pfile {
+  font-family: var(--mono); font-size: 10px; color: var(--t4);
+  margin-left: auto;
+}
+
+.land-pbody {
+  padding: 14px 18px 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.75;
+}
+
+.land-pline   { margin: 0; }
+.land-pindent { padding-left: 18px; }
+.land-pgap    { height: 6px; }
+
+.land-pblock {
+  margin: 4px 0 10px;
+  border-left: 2px solid var(--line-sub);
+  padding-left: 12px;
+}
+
+.land-t3    { color: var(--t3); }
+.land-pfail { color: var(--red); font-weight: 700; }
+.land-pok   { color: var(--green); }
+.land-pcmd  { color: var(--green); }
+
+/* Mobile */
+@media (max-width: 680px) {
+  .land-headline { font-size: clamp(22px, 6vw, 36px); }
+  .land-center   { padding: 20px 16px 28px; align-items: flex-start; }
+  .land-preview  { max-width: 100%; }
+}

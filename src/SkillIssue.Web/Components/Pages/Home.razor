@@ -1,14 +1,87 @@
 @page "/"
 
-<PageTitle>Skill Issue — Debugging Challenges</PageTitle>
+<PageTitle>Skill Issue — Debug Real Bugs</PageTitle>
 
-<div class="welcome-pane">
-    <div class="welcome-inner">
-        <h1 class="welcome-title">// skill-issue</h1>
-        <p class="welcome-sub">
-            Navigate a real open-source codebase.<br />
-            Find the bug. Fix it. Push. Prove it.
-        </p>
-        <p class="welcome-hint">&#8592; Select a challenge from the sidebar to begin.</p>
+@if (_isAuthenticated == true)
+{
+    <div class="welcome-pane">
+        <div class="welcome-inner">
+            <h1 class="welcome-title">// skill-issue</h1>
+            <p class="welcome-sub">
+                Navigate a real open-source codebase.<br />
+                Find the bug. Fix it. Push. Prove it.
+            </p>
+            <p class="welcome-hint">&#8592; Select a challenge from the sidebar to begin.</p>
+        </div>
     </div>
-</div>
+}
+else if (_isAuthenticated == false)
+{
+    <div class="land-fullpage">
+
+        <nav class="land-tabbar" aria-label="Editor tabs">
+            <a href="/" class="ide-tab active" aria-current="page">challenges.ts</a>
+            <span class="ide-tab" aria-hidden="true">readme.md</span>
+            <span class="ide-tab" aria-hidden="true">bug_report.log</span>
+        </nav>
+
+        <div class="land-center">
+            <div class="land-inner">
+
+                <h1 class="land-headline">
+                    <span class="land-hl-1">LeetCode won't save you here.</span>
+                    <span class="land-hl-2">Debugging practice for the actual job.</span>
+                </h1>
+
+                <p class="land-sub">Real bugs from real repos. Your IDE. Your call.</p>
+
+                <a href="/login" class="land-btn">Login with GitHub &#8594;</a>
+
+                <section class="land-preview" aria-label="Live bug preview">
+                    <div class="land-pbar" aria-hidden="true">
+                        <span class="land-pdot land-pdot-r"></span>
+                        <span class="land-pdot land-pdot-y"></span>
+                        <span class="land-pdot land-pdot-g"></span>
+                        <span class="land-ptitle">live bug preview</span>
+                        <span class="land-pfile">bug_report.log</span>
+                    </div>
+                    <div class="land-pbody" aria-label="Example test output">
+                        <p class="land-pline land-t3">Running tests for Humanizer.Tests...</p>
+                        <div class="land-pgap"></div>
+                        <p class="land-pline land-pindent land-t3">Passed &nbsp;Humanizer.Tests.CasingTests.PascalCaseWordsExpectedResult</p>
+                        <p class="land-pline land-pindent land-t3">Passed &nbsp;Humanizer.Tests.CasingTests.LowerCaseWordsExpectedResult</p>
+                        <p class="land-pline land-pindent land-pfail">Failed &nbsp;Humanizer.Tests.Inflections.PascalizeTests</p>
+                        <div class="land-pblock">
+                            <p class="land-pline land-t3">[xUnit.net] Assert.Equal() failure</p>
+                            <p class="land-pline land-t3">Expected: &quot;1StepBackward&quot;</p>
+                            <p class="land-pline land-pfail">Actual: &nbsp; &quot;1stepBackward&quot;</p>
+                        </div>
+                        <p class="land-pline land-t3">Failed&nbsp; 1, Passed&nbsp; 214 &nbsp; Duration: 0:00.412</p>
+                        <div class="land-pgap"></div>
+                        <p class="land-pline land-pcmd">&#36; git checkout -b fix/pascalize-digit-prefix</p>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+    </div>
+}
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+    private bool? _isAuthenticated;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthState is not null)
+        {
+            var state = await AuthState;
+            _isAuthenticated = state.User.Identity?.IsAuthenticated ?? false;
+        }
+        else
+        {
+            _isAuthenticated = false;
+        }
+    }
+}

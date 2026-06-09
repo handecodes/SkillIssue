@@ -1,0 +1,39 @@
+# Build artifacts — generated on every build, never needed in the image
+**/bin/
+**/obj/
+
+# Source control
+.git/
+.gitattributes
+
+# IDE and OS noise
+.vs/
+.vscode/
+.idea/
+**/*.user
+**/*.suo
+.DS_Store
+Thumbs.db
+
+# Secrets and local databases — must never enter the build context
+src/SkillIssue.Web/Properties/secrets.json
+**/*.db
+**/*.db-shm
+**/*.db-wal
+.env
+.env.*
+
+# Tests are not part of the production app
+tests/
+
+# Docs, design assets, and session data
+*.md
+design-reference.png
+.claude/
+
+# Docker files themselves (no value copying them into the image)
+Dockerfile
+.dockerignore
+
+# CI config — not needed at runtime
+.github/

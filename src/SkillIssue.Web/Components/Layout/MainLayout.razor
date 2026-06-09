@@ -3,28 +3,31 @@
 
 <a href="#main-content" class="skip-link">Skip to content</a>
 
-<NavMenu />
+@if (!IsLandingPage)
+{
+    <NavMenu />
 
-<nav class="ide-tabbar" aria-label="Open tabs">
-    <a href="/" class="ide-tab @(IsHome ? "active" : "")" aria-current="@(IsHome ? "page" : null)">
-        <span class="tab-dot" aria-hidden="true"></span>challenges.ts
-    </a>
-    <AuthorizeView>
-        <Authorized>
-            <a href="/progress" class="ide-tab @(IsProgress ? "active" : "")" aria-current="@(IsProgress ? "page" : null)">
-                <span class="tab-dot" aria-hidden="true"></span>progress.sh
-            </a>
-        </Authorized>
-    </AuthorizeView>
-    @if (IsChallenge)
-    {
-        <span class="ide-tab active" role="tab" aria-selected="true">
-            <span class="tab-dot" aria-hidden="true"></span>@ChallengeTabName
-        </span>
-    }
-</nav>
+    <nav class="ide-tabbar" aria-label="Open tabs">
+        <a href="/" class="ide-tab @(IsHome ? "active" : "")" aria-current="@(IsHome ? "page" : null)">
+            <span class="tab-dot" aria-hidden="true"></span>challenges.ts
+        </a>
+        <AuthorizeView>
+            <Authorized>
+                <a href="/progress" class="ide-tab @(IsProgress ? "active" : "")" aria-current="@(IsProgress ? "page" : null)">
+                    <span class="tab-dot" aria-hidden="true"></span>progress.sh
+                </a>
+            </Authorized>
+        </AuthorizeView>
+        @if (IsChallenge)
+        {
+            <span class="ide-tab active" role="tab" aria-selected="true">
+                <span class="tab-dot" aria-hidden="true"></span>@ChallengeTabName
+            </span>
+        }
+    </nav>
+}
 
-<main class="ide-editor" id="main-content">
+<main class="ide-editor @(IsLandingPage ? "ide-editor--landing" : "")" id="main-content">
     @Body
 </main>
 
@@ -35,7 +38,7 @@
     </div>
     <div class="sb-side">
         <span class="sb-item"><a href="https://github.com/handecodes/SkillIssue" target="_blank" rel="noopener noreferrer">Docs</a></span>
-        <span class="sb-item">Skill Issue v1.0</span>
+        <span class="sb-item">Skill Issue v@AppVersion.Current</span>
     </div>
 </div>
 
@@ -46,11 +49,29 @@
 </div>
 
 @code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+    private bool? _isAuthenticated;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthState is not null)
+        {
+            var state = await AuthState;
+            _isAuthenticated = state.User.Identity?.IsAuthenticated ?? false;
+        }
+        else
+        {
+            _isAuthenticated = false;
+        }
+    }
+
     private string Path => new Uri(Nav.Uri).AbsolutePath;
 
     private bool IsHome      => Path == "/";
     private bool IsProgress  => Path.StartsWith("/progress");
     private bool IsChallenge => Path.StartsWith("/challenge/");
+
+    private bool IsLandingPage => IsHome && _isAuthenticated == false;
 
     private string ChallengeTabName => "bug.cs";
 
