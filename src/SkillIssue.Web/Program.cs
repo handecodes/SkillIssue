@@ -97,10 +97,16 @@ var app = builder.Build();
 
 // Must be first: populates HttpContext.Connection.RemoteIpAddress and scheme
 // from X-Forwarded-For / X-Forwarded-Proto set by the reverse proxy.
-app.UseForwardedHeaders(new ForwardedHeadersOptions
+// KnownNetworks and KnownProxies are cleared because Azure App Service's
+// internal proxy address is not fixed — without this, X-Forwarded-Proto is
+// silently ignored and Request.Scheme stays "http", producing http:// OAuth callbacks.
+var forwardedHeadersOptions = new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
+};
+forwardedHeadersOptions.KnownIPNetworks.Clear();
+forwardedHeadersOptions.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedHeadersOptions);
 
 if (!app.Environment.IsDevelopment())
 {
