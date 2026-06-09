@@ -1,12 +1,23 @@
 @page "/progress"
 @attribute [Authorize]
 @inject IAttemptService AttemptService
+@inject NavigationManager Nav
 
 <PageTitle>My Progress — Skill Issue</PageTitle>
 
 <h1 class="pane-title">My Progress</h1>
 
-@if (summary is null)
+@if (_authError)
+{
+    <div class="welcome-pane">
+        <div class="welcome-inner">
+            <p style="font-family: var(--mono); font-size: 13px; color: var(--t2);">
+                Something went wrong. Please <a href="/login">log in again</a>.
+            </p>
+        </div>
+    </div>
+}
+else if (summary is null)
 {
     <p style="color: var(--text-3); font-family: var(--mono); font-size: 13px;">Loading...</p>
 }
@@ -49,12 +60,14 @@ else
     [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
 
     private UserProgressSummary? summary;
+    private bool _authError;
 
     protected override async Task OnInitializedAsync()
     {
-        var state = await AuthState!;
+        if (AuthState is null) { Nav.NavigateTo("/login", forceLoad: true); return; }
+        var state = await AuthState;
         var userId = state.User.GetUserId();
-        if (userId.HasValue)
-            summary = await AttemptService.GetProgressSummaryAsync(userId.Value);
+        if (!userId.HasValue) { _authError = true; return; }
+        summary = await AttemptService.GetProgressSummaryAsync(userId.Value);
     }
 }

@@ -6,6 +6,9 @@ namespace SkillIssue.Application.Services;
 
 public class ChallengeService(IDbContextFactory<AppDbContext> factory) : IChallengeService
 {
+    // Returns Domain entities directly as view data. Safe because all queries use AsNoTracking()
+    // and lazy loading is disabled, so no tracking leakage or N+1 risk. A DTO layer is not
+    // warranted at current scale, but these return types couple the web layer to the persistence model.
     public async Task<IReadOnlyList<Repo>> GetActiveReposWithBugsAsync()
     {
         await using var db = await factory.CreateDbContextAsync();

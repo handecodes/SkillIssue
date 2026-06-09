@@ -7,7 +7,7 @@
 
     <div class="sidebar-logo" aria-hidden="true">
         <span class="logo-name">SkillIssue</span>
-        <span class="logo-ver">v1.0.0</span>
+        <span class="logo-ver">v@AppVersion.Current</span>
     </div>
 
     <div class="sidebar-section" aria-hidden="true">Explorer</div>
@@ -105,6 +105,8 @@
     {
         Nav.LocationChanged += OnLocationChanged;
         repos = await ChallengeService.GetActiveReposWithBugsAsync();
+        // repos is IReadOnlyList<Repo> (non-nullable), so this guard is always true.
+        // Kept because repos field is typed nullable to drive the loading-state check in the template.
         if (repos is not null)
             foreach (var r in repos)
                 openFolders.Add(r.Id);

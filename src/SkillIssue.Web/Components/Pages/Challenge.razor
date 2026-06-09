@@ -4,6 +4,7 @@
 @inject IAttemptService AttemptService
 @inject IGitHubVerificationService VerificationService
 @inject IForkSubmissionLimiter ForkLimiter
+@inject NavigationManager Nav
 
 <PageTitle>@(bug?.Title ?? "Challenge") — Skill Issue</PageTitle>
 
@@ -299,9 +300,10 @@ else
     {
         if (bug is null || string.IsNullOrWhiteSpace(forkUrl)) return;
 
-        var state = await AuthState!;
+        if (AuthState is null) { Nav.NavigateTo("/login", forceLoad: true); return; }
+        var state = await AuthState;
         var userId = state.User.GetUserId();
-        if (userId is null) { submitError = "You must be logged in to submit."; return; }
+        if (userId is null) { Nav.NavigateTo("/login", forceLoad: true); return; }
 
         if (!ForkLimiter.TryAcquire(userId.Value))
         {
