@@ -1,3 +1,13 @@
+/* ── Commit Mono (self-hosted, MIT) ─────────────────────
+   Variable font: weight axis covers 100–900 in one file. */
+@font-face {
+  font-family: 'Commit Mono';
+  src: url('/fonts/CommitMono-VF.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ═══════════════════════════════════════════════════════
    SKILL ISSUE — wine/cream IDE theme
    ═══════════════════════════════════════════════════════ */
@@ -35,7 +45,7 @@
   --red-bg:   #5a1818;
 
   /* Typography */
-  --mono: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+  --mono: 'Commit Mono', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
   --ui:   system-ui, -apple-system, sans-serif;
 
   /* IDE chrome sizes */
