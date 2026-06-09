@@ -277,6 +277,8 @@ h1,h2,h3,h4,h5,h6 { color: var(--t1); font-weight: 600; margin-top: 0; }
 .ide-tab:hover  { background: var(--bg-2); color: var(--t2); }
 .ide-tab.active { background: var(--bg); color: var(--t1); border-top-color: var(--gold); }
 
+span.ide-tab { opacity: 0.45; cursor: default; pointer-events: none; }
+
 .tab-dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: var(--gold-lo); flex-shrink: 0;
