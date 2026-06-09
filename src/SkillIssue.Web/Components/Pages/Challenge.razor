@@ -1,7 +1,9 @@
 @page "/challenge/{BugId:int}"
+@attribute [Authorize]
 @inject IChallengeService ChallengeService
 @inject IAttemptService AttemptService
 @inject IGitHubVerificationService VerificationService
+@inject IForkSubmissionLimiter ForkLimiter
 
 <PageTitle>@(bug?.Title ?? "Challenge") — Skill Issue</PageTitle>
 
@@ -300,6 +302,12 @@ else
         var state = await AuthState!;
         var userId = state.User.GetUserId();
         if (userId is null) { submitError = "You must be logged in to submit."; return; }
+
+        if (!ForkLimiter.TryAcquire(userId.Value))
+        {
+            submitError = "Too many attempts. Please wait 30 seconds before trying again.";
+            return;
+        }
 
         if (DateTime.UtcNow - _lastSubmit < TimeSpan.FromSeconds(10))
         {

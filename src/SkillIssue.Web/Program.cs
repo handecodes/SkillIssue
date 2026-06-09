@@ -1,16 +1,19 @@
 using System.Security.Claims;
+using System.Threading.RateLimiting;
 using AspNet.Security.OAuth.GitHub;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using SkillIssue.Application;
 using SkillIssue.Application.Services;
 using SkillIssue.Data;
 using SkillIssue.Data.Seeding;
 using SkillIssue.Web.Components;
+using SkillIssue.Web.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,6 +70,24 @@ builder.Services
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 
+// Rate limiting — login endpoint (per-IP, unauthenticated callers)
+builder.Services.AddRateLimiter(opts =>
+{
+    opts.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    opts.AddFixedWindowLimiter("login", cfg =>
+    {
+        cfg.PermitLimit          = 10;
+        cfg.Window               = TimeSpan.FromMinutes(1);
+        cfg.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        cfg.QueueLimit           = 0;
+    });
+});
+
+// Fork submission rate limiter — per authenticated user, used inside the Blazor circuit.
+// The Blazor SignalR circuit bypasses HTTP middleware, so this runs as a singleton service
+// rather than via RequireRateLimiting on a route.
+builder.Services.AddSingleton<IForkSubmissionLimiter, ForkSubmissionLimiter>();
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.Configure<CircuitOptions>(opts =>
@@ -103,6 +124,7 @@ app.Use(async (ctx, next) =>
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 app.UseAntiforgery();
 
@@ -115,7 +137,7 @@ app.MapGet("/login", (string? returnUrl) =>
     return Results.Challenge(
         new AuthenticationProperties { RedirectUri = returnUrl ?? "/" },
         [GitHubAuthenticationDefaults.AuthenticationScheme]);
-});
+}).RequireRateLimiting("login");
 
 app.MapPost("/logout", async (HttpContext ctx, IAntiforgery antiforgery) =>
 {
