@@ -1,41 +1,52 @@
 # Skill Issue
 
-A debugging trainer that teaches students how to navigate large, real codebases. Students pick a challenge (a real bug planted in a .NET repo), locate and fix it in their own IDE, push to their fork, and the app verifies the fix via GitHub Actions CI.
+Debugging practice on real bugs from real open-source codebases. The kind of work the job actually involves.
 
-## Architecture
+Live at **[skillissue.se](https://skillissue.se)**
 
-```
-src/
-  SkillIssue.Domain/       — Entities: User, Repo, Bug, HintTier, Attempt
-  SkillIssue.Data/         — EF Core DbContext, migrations, seeder
-  SkillIssue.Application/  — Services, models, business logic
-  SkillIssue.Web/          — Blazor Server frontend + Program.cs
-tests/
-  SkillIssue.Tests/        — xUnit tests for services
-```
+---
 
-Dependency flow: `Web` → `Application` → `Data` → `Domain`
+## What it is
 
-## Prerequisites
+You get a failing test, a brief description of the symptom (no location given), and three tiered hints. Fork the repo, find the bug, fix it, push. CI on your fork verifies the result.
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- A [GitHub OAuth App](https://github.com/settings/applications/new)
-  - Homepage URL: `http://localhost:5239`
-  - Callback URL: `http://localhost:5239/signin-github`
+Bugs are sourced from real fix commits in MIT/Apache/BSD-licensed .NET libraries. Not generated, not simplified.
 
-## Setup
+---
 
-### 1. Clone and restore
+## Screenshots
+
+_To be added after deploy._
+
+---
+
+## Stack
+
+- C# / .NET 10 LTS
+- Blazor Server (interactive SSR over SignalR)
+- Entity Framework Core with SQLite
+- GitHub OAuth via AspNet.Security.OAuth.GitHub
+- Docker (Linux container)
+- Azure App Service
+
+---
+
+## Run locally
+
+**Prerequisites**
+
+- .NET 10 SDK
+- A GitHub OAuth app ([create one here](https://github.com/settings/developers))
+  - Callback URL: `https://localhost:7239/signin-github`
+
+**Setup**
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/handecodes/SkillIssue.git
 cd SkillIssue
-dotnet restore
 ```
 
-### 2. Configure GitHub OAuth credentials
-
-Use .NET user-secrets (never commit credentials):
+Set OAuth credentials via user-secrets. Do not commit these.
 
 ```bash
 cd src/SkillIssue.Web
@@ -43,53 +54,74 @@ dotnet user-secrets set "GitHub:ClientId" "<your-client-id>"
 dotnet user-secrets set "GitHub:ClientSecret" "<your-client-secret>"
 ```
 
-### 3. Apply database migrations
-
-Migrations are applied automatically on first run. To create new migrations after model changes:
+Optionally, set a GitHub PAT to avoid rate limits on fork verification:
 
 ```bash
-dotnet ef migrations add <MigrationName> \
-  --project src/SkillIssue.Data \
-  --startup-project src/SkillIssue.Web
+dotnet user-secrets set "GitHub:PatToken" "<your-pat>"
 ```
 
-### 4. Run
+**Run**
 
 ```bash
-dotnet run --project src/SkillIssue.Web
+dotnet run --project src/SkillIssue.Web --launch-profile https
 ```
 
-The app opens at `http://localhost:5239`. The database (`skillissue.db`) is created automatically with seed data (2 sample repos, 3 challenges).
+The database is created and seeded on first run. Open `https://localhost:5239`.
 
-## Running tests
+**Tests**
 
 ```bash
 dotnet test
 ```
 
-Tests use an in-memory SQLite database — no setup required.
+**Adding a migration after model changes**
 
-## Core flow
+```bash
+dotnet ef migrations add <Name> \
+  --project src/SkillIssue.Data \
+  --startup-project src/SkillIssue.Web
+```
 
-1. **Browse** — Home page lists all active repos and their bugs, sorted by difficulty
-2. **Challenge** — Click a challenge to see the brief, error message, and failing tests
-3. **Hints** — Reveal up to 3 tiered hints (nudge → area → file & line)
-4. **Fix** — Fork the repo on GitHub, fix the bug in your IDE, push
-5. **Submit** — Paste your fork URL; the app checks your latest CI run via GitHub API
-6. **Progress** — `/progress` shows solved challenges and hint usage per repo
+---
 
-## Database
+## Project structure
 
-Uses SQLite in development (file: `skillissue.db` in the Web project output directory). To switch to SQL Server for production, change the provider in `ServiceCollectionExtensions` in `SkillIssue.Data` and update the connection string in `appsettings.json`.
+```
+src/
+  SkillIssue.Domain/      Entities: User, Repo, Bug, HintTier, FailingTest, Attempt
+  SkillIssue.Data/        EF Core DbContext, migrations, seeder
+  SkillIssue.Application/ Services, models
+  SkillIssue.Web/         Blazor Server app and Program.cs
+tests/
+  SkillIssue.Tests/       xUnit tests (in-memory SQLite, no external dependencies)
+docs/
+  adr/                    Architecture decision records
+```
 
-## Seed data
+Dependency direction: `Web` -> `Application` -> `Data` -> `Domain`
 
-Two repos seeded on first run (real bugs from MIT-licensed open-source libraries):
+---
 
-| Repo | Bug | Difficulty |
-|------|-----|-----------|
-| Humanizr/Humanizer | Pascalize() silently drops digits at word boundaries | Easy |
-| Humanizr/Humanizer | DateOnly humanization is wrong across year boundaries | Medium |
-| Humanizr/Humanizer | ToMetric() uses wrong SI prefix when rounding crosses a threshold | Medium |
-| Humanizr/Humanizer | Titleize() returns empty string for non-ASCII inputs | Medium |
-| JamesNK/Newtonsoft.Json | Deserializing TimeOnly 'HH:mm' format throws FormatException | Easy |
+## Known limitations
+
+**SQLite write contention.** SQLite handles the current load but will hit contention under concurrent writes. The data layer is structured so a SQL Server migration requires only a connection string and provider swap, with no model changes needed.
+
+**Ephemeral storage in the current deploy.** The SQLite file lives at `/data/skillissue.db` in the container. Azure App Service does not persist this across container restarts without a mounted persistent volume. The database resets on redeploy. Fixing this requires mounting an Azure Files share or switching to Azure SQL.
+
+**No admin UI.** Adding or editing challenges requires a code change and redeployment. There is no web interface for managing the challenge library.
+
+**CSP not implemented.** Blazor Server requires `unsafe-inline` scripts for its SignalR bootstrap. A meaningful Content-Security-Policy needs per-request nonce injection and has been deferred.
+
+**No scale-to-zero handling.** Blazor Server circuits need a warm host. Cold-start latency is noticeable and not handled gracefully.
+
+---
+
+## Bug sources
+
+| Library | License | Repo |
+|---------|---------|------|
+| Humanizer | MIT | [Humanizr/Humanizer](https://github.com/Humanizr/Humanizer) |
+| Newtonsoft.Json | MIT | [JamesNK/Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) |
+| Polly | BSD 3-Clause | [App-vNext/Polly](https://github.com/App-vNext/Polly) |
+| Serilog | Apache 2.0 | [serilog/serilog](https://github.com/serilog/serilog) |
+| NodaTime | Apache 2.0 | [nodatime/nodatime](https://github.com/nodatime/nodatime) |
