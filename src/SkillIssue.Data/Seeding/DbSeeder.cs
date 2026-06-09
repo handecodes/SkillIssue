@@ -7,8 +7,7 @@ public static class DbSeeder
 {
     public static async Task SeedAsync(AppDbContext db)
     {
-        if (await db.Repos.AnyAsync())
-            return;
+        var existingUrls = await db.Repos.Select(r => r.GitHubUrl).ToListAsync();
 
         var humanizer = new Repo
         {
@@ -119,7 +118,119 @@ public static class DbSeeder
             ]
         };
 
-        db.Repos.AddRange(humanizer, newtonsoftJson);
-        await db.SaveChangesAsync();
+        var polly = new Repo
+        {
+            Name = "App-vNext/Polly",
+            GitHubUrl = "https://github.com/App-vNext/Polly",
+            Language = "C#",
+            Description = "A .NET resilience and transient-fault-handling library. BSD 3-Clause licensed.",
+            IsActive = true,
+            Bugs =
+            [
+                new Bug
+                {
+                    Title = "CircuitBreaker hangs the calling thread under concurrent use",
+                    Brief = "A ResiliencePipeline with a circuit-breaker strategy causes the application to deadlock. Under concurrent executions the call never returns: no exception is thrown, no timeout fires, and the circuit state never changes. The root cause is not in user code and does not appear in any stack trace.\n\nFork the repo, remove the deadlock from the circuit breaker's internal task scheduler, and push.\n\nSource: App-vNext/Polly (BSD 3-Clause) — fix introduced in commit 016dd909.",
+                    ErrorMessage = "Expected value to be True, but found False.\n  at ScheduledTaskExecutorTests.ScheduleTask_InlineContinuationDoesNotDeadlock\nThe scheduled task did not complete within the timeout — an inline continuation blocked the executor's own thread.",
+                    Difficulty = Difficulty.Hard,
+                    FailingTests =
+                    [
+                        new FailingTest { Order = 1, TestName = "Polly.Core.Tests.CircuitBreaker.Controller.ScheduledTaskExecutorTests.ScheduleTask_InlineContinuationDoesNotDeadlock" }
+                    ],
+                    Hints =
+                    [
+                        new HintTier { Order = 1, Label = "Nudge", Content = "The deadlock is inside Polly, not in your code. The circuit breaker serializes its state transitions through an internal single-threaded task executor. When a task completes and a continuation has already been attached, something about how that continuation runs causes the executor's own thread to block waiting for itself. What in .NET controls whether a continuation runs inline on the completing thread, or on the thread pool?" },
+                        new HintTier { Order = 2, Label = "Area", Content = "Navigate to src/Polly.Core/CircuitBreaker/Controller/. There is a ScheduledTaskExecutor class that manages the circuit breaker's internal work queue using a dedicated processing thread. It uses a TaskCompletionSource to hand results back to callers. Look at exactly how that TaskCompletionSource is instantiated." },
+                        new HintTier { Order = 3, Label = "File & Line", Content = "In src/Polly.Core/CircuitBreaker/Controller/ScheduledTaskExecutor.cs, find: var source = new TaskCompletionSource<object>(); Without TaskCreationOptions.RunContinuationsAsynchronously, calling SetResult() on this source runs any waiting continuations synchronously on the executor thread. If a continuation tries to schedule more work through the executor, both sides wait on each other indefinitely. Fix: new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously)." }
+                    ]
+                },
+                new Bug
+                {
+                    Title = "TimeoutRejectedException.Timeout contains a negative near-zero value",
+                    Brief = "A timeout strategy configured with a five-second timeout correctly cancels long-running executions and throws TimeoutRejectedException — but exception.Timeout does not contain the configured five seconds. Instead it holds a small negative duration such as -00:00:00.001, making it impossible to distinguish different timeout configurations from the caught exception.\n\nThe bug is present in both the synchronous and asynchronous execution paths.\n\nFork the repo, fix both paths, and push.\n\nSource: App-vNext/Polly (BSD 3-Clause) — fix introduced in commit 74bf31f.",
+                    ErrorMessage = "Expected TimeSpan to be 00:00:05, but found -00:00:00.0010000.\n  at TimeoutAsyncSpecs.Should_throw_when_timeout_is_less_than_execution_duration__pessimistic\n  at TimeoutSpecs.Should_throw_when_timeout_is_less_than_execution_duration__pessimistic",
+                    Difficulty = Difficulty.Hard,
+                    FailingTests =
+                    [
+                        new FailingTest { Order = 1, TestName = "Polly.Specs.Timeout.TimeoutAsyncSpecs.Should_throw_when_timeout_is_less_than_execution_duration__pessimistic" },
+                        new FailingTest { Order = 2, TestName = "Polly.Specs.Timeout.TimeoutSpecs.Should_throw_when_timeout_is_less_than_execution_duration__pessimistic" }
+                    ],
+                    Hints =
+                    [
+                        new HintTier { Order = 1, Label = "Nudge", Content = "TimeoutRejectedException is thrown and caught correctly — the timeout policy is working. But exception.Timeout is wrong. The configured timeout is a known value at execution time. Somewhere between the policy being invoked and the exception being thrown, the value is not flowing through. Search for where TimeoutRejectedException is constructed, not where it is configured." },
+                        new HintTier { Order = 2, Label = "Area", Content = "TimeoutPolicy.cs does not throw the exception directly — it delegates to engine classes. Navigate to src/Polly/Timeout/. There are two separate engine files: one for the synchronous execution path and one for asynchronous. Both contain the throw site. Inspect what arguments each one passes to the TimeoutRejectedException constructor." },
+                        new HintTier { Order = 3, Label = "File & Line", Content = "In src/Polly/Timeout/AsyncTimeoutEngine.cs and src/Polly/Timeout/TimeoutEngine.cs, find the throw new TimeoutRejectedException(...) statements. Both pass only a message string and omit the timeout parameter. The timeout variable is already in scope in both methods. Add it as the second argument: new TimeoutRejectedException(message, timeout)." }
+                    ]
+                }
+            ]
+        };
+
+        var serilog = new Repo
+        {
+            Name = "serilog/serilog",
+            GitHubUrl = "https://github.com/serilog/serilog",
+            Language = "C#",
+            Description = "Simple .NET logging with fully-structured events. Apache 2.0 licensed.",
+            IsActive = true,
+            Bugs =
+            [
+                new Bug
+                {
+                    Title = "FallbackChain never fires when primary sink has a minimum level restriction",
+                    Brief = "A logger uses WriteTo.FallbackChain(): a primary batching sink restricted to Information and above, with a fallback sink to catch failures. When the primary sink is broken, the fallback never receives events. They are silently dropped — nothing appears in SelfLog either.\n\nFork the repo, identify which wrapper swallows the failure listener, implement the missing interface, and push.\n\nSource: serilog/serilog (Apache 2.0) — fix introduced in commit c53eb147.",
+                    ErrorMessage = "Assert.Equal() Failure\nExpected: 1\nActual:   0\n  at FailureListenerTests.RestrictedSinkForwardsFailureListenerToInnerSink\nFallback sink received no events despite primary sink failure.",
+                    Difficulty = Difficulty.Hard,
+                    FailingTests =
+                    [
+                        new FailingTest { Order = 1, TestName = "Serilog.Tests.Core.FailureListenerTests.RestrictedSinkForwardsFailureListenerToInnerSink" }
+                    ],
+                    Hints =
+                    [
+                        new HintTier { Order = 1, Label = "Nudge", Content = "The same FallbackChain works correctly when the primary sink has no minimum level restriction. Adding restrictedToMinimumLevel breaks it. In Serilog, when a minimum level is set on a sink, the sink gets wrapped before it is registered. If that wrapper does not forward the failure listener inward, the inner batching sink never learns that it should route failures anywhere. Is there a wrapper involved when restrictedToMinimumLevel is set?" },
+                        new HintTier { Order = 2, Label = "Area", Content = "Navigate to src/Serilog/Core/Sinks/. When restrictedToMinimumLevel is used, Serilog wraps the target sink in RestrictedSink. Serilog propagates failure handlers through the ISetLoggingFailureListener interface. Look at how OptionalInterfaceForwardingSink in the same folder handles this interface — then check whether RestrictedSink does the same." },
+                        new HintTier { Order = 3, Label = "File & Line", Content = "In src/Serilog/Core/Sinks/RestrictedSink.cs, the class does not implement ISetLoggingFailureListener. The failure listener installed by FallbackChain stops at RestrictedSink and never reaches the inner batching sink. Add ISetLoggingFailureListener to the class declaration and implement: public void SetFailureListener(ILoggingFailureListener listener) => (_sink as ISetLoggingFailureListener)?.SetFailureListener(listener);" }
+                    ]
+                }
+            ]
+        };
+
+        var nodaTime = new Repo
+        {
+            Name = "nodatime/nodatime",
+            GitHubUrl = "https://github.com/nodatime/nodatime",
+            Language = "C#",
+            Description = "A better date and time API for .NET. Apache 2.0 licensed.",
+            IsActive = true,
+            Bugs =
+            [
+                new Bug
+                {
+                    Title = "Period.Between() returns mixed-sign components when crossing midnight",
+                    Brief = "Period.Between() on two LocalDateTime values that span a day boundary returns a period with mixed positive and negative components — for example P6DT24H-1M instead of a correctly normalized result. The negative component makes the period invalid: adding it back to the start time does not return the end time.\n\nFork the repo, fix the time-between calculation to handle day-boundary crossings correctly, and push.\n\nSource: nodatime/nodatime (Apache 2.0) — fix introduced in commit 917c6f6, PR #824, authored by Jon Skeet.",
+                    ErrorMessage = "Expected: 59\nActual:   -1\n  at PeriodTest.BetweenLocalDateTimes_TimeCrossesMidnight\nperiod.Minutes was -1 — Period.Between produced mixed-sign components across a day boundary.",
+                    Difficulty = Difficulty.Hard,
+                    FailingTests =
+                    [
+                        new FailingTest { Order = 1, TestName = "NodaTime.Test.PeriodTest.BetweenLocalDateTimes_TimeCrossesMidnight" }
+                    ],
+                    Hints =
+                    [
+                        new HintTier { Order = 1, Label = "Nudge", Content = "The bug only manifests when the time portion of the span crosses midnight. Period.Between(new LocalDateTime(2017,1,1,23,0), new LocalDateTime(2017,1,7,23,59)) should yield 6 days and 59 minutes, but instead produces 6 days, 24 hours, -1 minute. The date-component arithmetic is correct. Focus on how the time components are extracted from the remaining gap after dates are accounted for." },
+                        new HintTier { Order = 2, Label = "Area", Content = "Open src/NodaTime/Period.cs and find the private GetTimeBetween() method. It loops through time-period fields (hours, minutes, seconds) and extracts each component in turn. Now open src/NodaTime/TimePeriodField.cs and look at how GetValue() works. Time fields have a fixed number of ticks per unit — unlike date fields. Is the calculation taking advantage of that?" },
+                        new HintTier { Order = 3, Label = "File & Line", Content = "The root cause is in src/NodaTime/TimePeriodField.cs. Because time-period fields have a fixed tick length, the correct approach is to convert the remaining gap to a Duration and integer-divide by UnitTicks. Add: internal long GetUnitsInDuration(Duration duration) => duration.BclCompatibleTicks / UnitTicks; Then update GetTimeBetween() in src/NodaTime/Period.cs to call this method instead. You will also need to change IsInt64Representable in src/NodaTime/Duration.cs from private to internal so TimePeriodField can access it." }
+                    ]
+                }
+            ]
+        };
+
+        var toAdd = new[] { humanizer, newtonsoftJson, polly, serilog, nodaTime }
+            .Where(r => !existingUrls.Contains(r.GitHubUrl))
+            .ToList();
+
+        if (toAdd.Count > 0)
+        {
+            db.Repos.AddRange(toAdd);
+            await db.SaveChangesAsync();
+        }
     }
 }
