@@ -1,5 +1,8 @@
 # Skill Issue
 
+[![CI](https://github.com/handecodes/SkillIssue/actions/workflows/ci.yml/badge.svg)](https://github.com/handecodes/SkillIssue/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/handecodes/SkillIssue/graph/badge.svg)](https://codecov.io/gh/handecodes/SkillIssue)
+
 Debugging practice on real bugs from real open-source codebases. The kind of work the job actually involves.
 
 Live at **[skillissue.se](https://skillissue.se)**
@@ -8,7 +11,7 @@ Live at **[skillissue.se](https://skillissue.se)**
 
 ## What it is
 
-You get a failing test, a brief description of the symptom (no location given), and three tiered hints. Fork the repo, find the bug, fix it, push. CI on your fork verifies the result.
+9 challenges across 6 real open-source .NET repositories. You get a failing test, a brief description of the symptom (no location given), and three tiered hints. Fork the repo, find the bug, fix it, push. CI on your fork verifies the result.
 
 Bugs are sourced from real fix commits in MIT/Apache/BSD-licensed .NET libraries. Not generated, not simplified.
 
@@ -59,6 +62,10 @@ Optionally, set a GitHub PAT to avoid rate limits on fork verification:
 ```bash
 dotnet user-secrets set "GitHub:PatToken" "<your-pat>"
 ```
+
+**GitHub secrets (CI only)**
+
+After forking and connecting the repo to Codecov, add `CODECOV_TOKEN` as a repository secret under Settings > Secrets and variables > Actions. The CI workflow uploads coverage reports on every push to `main`.
 
 **Run**
 
@@ -114,6 +121,8 @@ Dependency direction: `Web` -> `Application` -> `Data` -> `Domain`
 
 **No scale-to-zero handling.** Blazor Server circuits need a warm host. Cold-start latency is noticeable and not handled gracefully.
 
+**Challenge sourcing constraint.** Challenge sourcing currently requires repositories where the failing test was committed separately before the fix. A platform-fork model is in development to remove this constraint and expand the challenge library significantly.
+
 ---
 
 ## Bug sources
@@ -121,7 +130,16 @@ Dependency direction: `Web` -> `Application` -> `Data` -> `Domain`
 | Library | License | Repo |
 |---------|---------|------|
 | Humanizer | MIT | [Humanizr/Humanizer](https://github.com/Humanizr/Humanizer) |
-| Newtonsoft.Json | MIT | [JamesNK/Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) |
+| Castle.Core | Apache 2.0 | [castleproject/Core](https://github.com/castleproject/Core) |
+| NUnit | MIT | [nunit/nunit](https://github.com/nunit/nunit) |
 | Polly | BSD 3-Clause | [App-vNext/Polly](https://github.com/App-vNext/Polly) |
-| Serilog | Apache 2.0 | [serilog/serilog](https://github.com/serilog/serilog) |
-| NodaTime | Apache 2.0 | [nodatime/nodatime](https://github.com/nodatime/nodatime) |
+| Autofac | MIT | [autofac/Autofac](https://github.com/autofac/Autofac) |
+| Newtonsoft.Json | MIT | [JamesNK/Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) |
+
+---
+
+## How challenges are sourced
+
+Every challenge traces back to a real pull request in an open-source .NET repository. The sourcing process has one hard structural requirement: the PR must contain a test-only commit before the fix commit. That first commit adds a failing test that reproduces the bug without touching any production code. The second commit introduces the fix. Students check out the first commit, so they start with a test that fails and a codebase in the state the original author faced.
+
+Difficulty reflects how hard the bug is to locate, not how complex the fix is. A one-character fix can be Hard if reproducing the symptom requires reading across multiple abstraction layers. A multi-file change can be Easy if the test failure message points directly at the problem. Tiered hints are calibrated to the navigation challenge, not the implementation challenge.
