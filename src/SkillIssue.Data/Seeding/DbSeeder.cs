@@ -99,44 +99,27 @@ public static class DbSeeder
     private static Repo CastleCoreRepo() => new()
     {
         Name        = "castleproject/Core",
-        GitHubUrl   = "https://github.com/castleproject/Core",
+        GitHubUrl   = "https://github.com/handecodes/skillissue-castlecore",
         Language    = "C#",
         Description = "Castle Core, including Castle DynamicProxy, Logging Abstractions and DictionaryAdapter. Apache 2.0 licensed.",
-        IsActive    = false, // not yet proven through the fork pipeline
+        IsActive    = true,
         Bugs =
         [
             new Bug
             {
-                Title      = "Proxy generation silently deduplicates case-differing interface members",
-                Brief      = "Castle.Core's DynamicProxy generates proxy types from interfaces. When an interface declares two or more members — methods, events, or properties — whose names differ only in letter casing, such as Abc() and aBc(), the proxy generator treats them as duplicates and generates an incorrect proxy. The differently-named members cannot be intercepted independently.\n\nFork the repo, check out the challenge commit, fix the bug, then push.\n\n    git checkout 6b63d620\n\nSource: castleproject/Core (Apache 2.0) — fix introduced in PR #715.",
-                ErrorMessage = "Castle.DynamicProxy did not generate distinct members for an interface with case-different method names — one member was silently dropped.\n  at ProxyGeneratorTests.ProxyWithCaseSensitiveMemberNames_InterceptsCorrectly",
-                Difficulty = Difficulty.Easy,
-                FailingTests =
-                [
-                    new FailingTest { Order = 1, TestName = "Castle.DynamicProxy.Tests.ProxyGeneratorTests.ProxyWithCaseSensitiveMemberNames_InterceptsCorrectly" }
-                ],
-                Hints =
-                [
-                    new HintTier { Order = 1, Label = "Nudge",      Content = "The bug only affects interfaces where two members share the same letters but differ in casing. The proxy generator tracks which members it has already processed — what decides whether two members are treated as duplicates?" },
-                    new HintTier { Order = 2, Label = "Area",       Content = "The proxy generator uses meta objects to represent each interface member: MetaMethod for methods, MetaProperty for properties, MetaEvent for events. Each has an Equals override used for deduplication. Look at how each Equals method compares member names." },
-                    new HintTier { Order = 3, Label = "File & Line", Content = "In src/Castle.Core/DynamicProxy/Generators/MetaMethod.cs, MetaEvent.cs, and MetaProperty.cs, the Equals method uses StringComparer.OrdinalIgnoreCase to compare names. .NET member names are case-sensitive. Change OrdinalIgnoreCase to Ordinal in all three files." }
-                ]
-            },
-            new Bug
-            {
-                Title      = "ProxyGenerator throws AmbiguousMatchException for record class hooks",
-                Brief      = "Creating an interface proxy via Castle.Core's ProxyGenerator throws an AmbiguousMatchException when the IProxyGenerationHook supplied is a record class. Plain classes and structs work without issue. The exception does not originate from the interface being proxied — it comes from Castle.Core's own internal reflection on the hook type, triggered before any interface members are inspected.\n\nFork the repo, check out the challenge commit, fix the bug, then push.\n\n    git checkout c901928e\n\nSource: castleproject/Core (Apache 2.0) — fix introduced in PR #721.",
-                ErrorMessage = "System.Reflection.AmbiguousMatchException: Ambiguous match found.\n  at Castle.DynamicProxy.Generators.BaseProxyGenerator.OverridesEqualsAndGetHashCode(Type)\n  at ProxyGeneratorTests.CreateClassProxy_WithRecordHook_DoesNotThrow",
+                Title      = "Proxy merges interface methods that differ only in letter case",
+                Brief      = "Castle DynamicProxy can't proxy an interface that declares two methods whose names differ only in letter case — like Abc() and aBc(). Instead of generating a distinct proxy member for each, the generator treats them as the same method and throws while building the proxy. Methods, events, and properties are all affected, because events and properties are backed by methods (add_Abc, get_Abc).\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: castleproject/Core (Apache 2.0).",
+                ErrorMessage = "Castle.DynamicProxy.DynamicProxyException : Duplicate element: Castle.DynamicProxy.Generators.MetaMethod\n  at CaseSensitivityTestCase.Can_distinguish_differently_cased_methods_during_interception\nProxying an interface with two methods that differ only in case threw instead of generating distinct members.",
                 Difficulty = Difficulty.Medium,
                 FailingTests =
                 [
-                    new FailingTest { Order = 1, TestName = "Castle.DynamicProxy.Tests.ProxyGeneratorTests.CreateClassProxy_WithRecordHook_DoesNotThrow" }
+                    new FailingTest { Order = 1, TestName = "Castle.DynamicProxy.Tests.CaseSensitivityTestCase.Can_distinguish_differently_cased_methods_during_interception" }
                 ],
                 Hints =
                 [
-                    new HintTier { Order = 1, Label = "Nudge",      Content = "The exception is AmbiguousMatchException from .NET reflection — thrown when you ask for a method by name and more than one overload matches. A C# record class auto-generates two public Equals overloads: one from object and one from IEquatable<T>. Castle.Core checks the hook type using reflection. Where does it look up Equals?" },
-                    new HintTier { Order = 2, Label = "Area",       Content = "Search for OverridesEqualsAndGetHashCode inside the generator code (BaseProxyGenerator). It calls Type.GetMethod(\"Equals\", ...) with binding flags but without specifying parameter types. When two public Equals overloads exist, GetMethod cannot decide which one to return." },
-                    new HintTier { Order = 3, Label = "File & Line", Content = "In src/Castle.Core/DynamicProxy/Generators/BaseProxyGenerator.cs, the call type.GetMethod(\"Equals\", BindingFlags.Public | BindingFlags.Instance) matches all public Equals overloads. Narrow it to one by adding parameter types: type.GetMethod(\"Equals\", BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(object) }, null). This retrieves only Equals(object) and avoids the ambiguity." }
+                    new HintTier { Order = 1, Label = "Nudge",      Content = "The proxy fails only when two members' names differ solely in letter case. While collecting the interface's members the generator decides two are \"the same\" and refuses to add the second. What kind of string comparison would treat Abc and aBc as equal — and is that correct for .NET member names?" },
+                    new HintTier { Order = 2, Label = "Area",       Content = "The generator represents each interface member as a meta object — MetaMethod for methods (events and properties are backed by methods too: add_X, get_X). Each meta object has an Equals override used to deduplicate members while building the proxy. Look at how MetaMethod.Equals compares the member Name." },
+                    new HintTier { Order = 3, Label = "File & Line", Content = "In src/Castle.Core/DynamicProxy/Generators/MetaMethod.cs, the Equals override compares names with StringComparer.OrdinalIgnoreCase, so Abc and aBc are considered the same method and the second is rejected as a duplicate. .NET member names are case-sensitive. Change StringComparer.OrdinalIgnoreCase to StringComparer.Ordinal." }
                 ]
             }
         ]
