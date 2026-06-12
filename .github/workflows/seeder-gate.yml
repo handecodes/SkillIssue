@@ -1,0 +1,25 @@
+name: seeder-gate
+
+# Fails the build if DbSeeder.cs drifts from manifest.json — the manifest is the
+# source of truth, and the generator must reproduce every row byte-for-byte.
+on:
+  push:
+    paths:
+      - 'src/SkillIssue.Data/Seeding/DbSeeder.cs'
+      - 'tools/SeederGen/**'
+  pull_request:
+    paths:
+      - 'src/SkillIssue.Data/Seeding/DbSeeder.cs'
+      - 'tools/SeederGen/**'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      # Exits non-zero if any row is not IDENTICAL, blocking the merge.
+      - name: Verify seeder rows match manifest
+        run: dotnet run --project tools/SeederGen -- verify
