@@ -68,7 +68,7 @@ else
                 <div class="code-panel-body">
                     @foreach (var t in bug.FailingTests.Select(f => f.TestName))
                     {
-                        <code>@t</code>
+                        <div><code>@t</code></div>
                     }
                 </div>
             </div>
@@ -169,14 +169,23 @@ else
                         </li>
                         <li>
                             <span class="step-n" aria-hidden="true">02</span>
-                            <span>Clone your fork and run the tests to reproduce the failure</span>
+                            <span>
+                                On your new fork, open the <strong style="color: var(--t1);">Actions</strong> tab and enable workflows
+                                (&ldquo;<strong style="color: var(--t1);">I understand my workflows, go ahead and enable them</strong>&rdquo;).
+                                GitHub disables Actions on forks by default &mdash; until you do this, your pushed fix runs no CI and
+                                the check below stays stuck on &ldquo;no completed workflow runs.&rdquo;
+                            </span>
                         </li>
                         <li>
                             <span class="step-n" aria-hidden="true">03</span>
-                            <span>Find and fix the bug, then push your commit</span>
+                            <span>Clone your fork and run the tests to reproduce the failure</span>
                         </li>
                         <li>
                             <span class="step-n" aria-hidden="true">04</span>
+                            <span>Find and fix the bug, then push your commit</span>
+                        </li>
+                        <li>
+                            <span class="step-n" aria-hidden="true">05</span>
                             <span>Paste your fork URL below &mdash; the CI run is checked automatically</span>
                         </li>
                     </ol>
