@@ -1,0 +1,72 @@
+{
+  "challenges": [
+    {
+      "id": "Humanizer",
+      "name": "Humanizr/Humanizer",
+      "gitHubUrl": "https://github.com/handecodes/skillissue-humanizer",
+      "language": "C#",
+      "description": "A .NET library for making strings, numbers, dates, times and quantities human-readable. MIT licensed.",
+      "isActive": true,
+      "bugs": [
+        {
+          "title": "Pascalize() silently drops digits at word boundaries",
+          "brief": "\"customer name 1\".Pascalize() returns \"CustomerName\" instead of \"CustomerName1\" — the trailing digit silently disappears, and \"customer name $\" loses its \"$\" the same way. Pascalize() capitalises the first letter of each word and joins them, but somewhere in that process every character that isn't a letter is being thrown away instead of preserved. Find where non-letter characters are dropped and keep them.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: Humanizr/Humanizer (MIT).",
+          "errorMessage": "Assert.Equal(\"CustomerName1\", \"customer name 1\".Pascalize())\nExpected: CustomerName1\nActual:   CustomerName",
+          "difficulty": "Easy",
+          "failingTests": [
+            "InflectorTests.Pascalize (InlineData: \"customer name 1\", \"CustomerName1\")"
+          ],
+          "hints": [
+            { "label": "Nudge", "content": "Pascalize() works perfectly for letters-only words like \"customer name\". Try it on a string where the last word starts with a digit, like \"customer name 1\". The digit disappears from the output — why might that be?" },
+            { "label": "Area", "content": "Look in src/Humanizer/InflectorExtensions.cs. Pascalize() has a fast path for ASCII input — a method called TryPascalizeAscii that walks the string character by character and builds the result in a buffer. Read that loop carefully: which characters get copied into the buffer, and which get skipped?" },
+            { "label": "File & Line", "content": "In InflectorExtensions.cs, inside TryPascalizeAscii, the loop treats spaces/underscores/hyphens as word separators and then has a guard that skips any character where char.IsLetter(c) is false — so digits and symbols are continue'd past and never written to the buffer. Remove that non-letter guard so every non-separator character is appended." }
+          ]
+        }
+      ],
+      "pipeline": {
+        "runnerStyle": "mtp",
+        "sourceFile": "src/Humanizer/InflectorExtensions.cs",
+        "buggyLine": "if (!char.IsLetter(c))\n            {\n                continue;\n            }",
+        "fixedLine": "",
+        "testProject": "tests/Humanizer.Tests/Humanizer.Tests.csproj",
+        "targetFramework": "net10.0",
+        "sdkPin": "10.0.300",
+        "extraTestArgs": "-p:TargetFrameworks=net10.0 -- --filter-method \"InflectorTests.Pascalize\""
+      }
+    },
+    {
+      "id": "Polly",
+      "name": "App-vNext/Polly",
+      "gitHubUrl": "https://github.com/handecodes/skillissue-polly",
+      "language": "C#",
+      "description": "A .NET resilience and transient-fault-handling library. BSD 3-Clause licensed.",
+      "isActive": true,
+      "bugs": [
+        {
+          "title": "CircuitBreaker hangs the calling thread under concurrent use",
+          "brief": "A ResiliencePipeline with a circuit-breaker strategy causes the application to deadlock. Under concurrent executions the call never returns: no exception is thrown, no timeout fires, and the circuit state never changes. The root cause is not in user code and does not appear in any stack trace.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: App-vNext/Polly (BSD 3-Clause).",
+          "errorMessage": "Expected value to be True, but found False.\n  at ScheduledTaskExecutorTests.ScheduleTask_InlineContinuationDoesNotDeadlock\nThe scheduled task did not complete within the timeout — an inline continuation blocked the executor's own thread.",
+          "difficulty": "Hard",
+          "failingTests": [
+            "Polly.Core.Tests.CircuitBreaker.Controller.ScheduledTaskExecutorTests.ScheduleTask_InlineContinuationDoesNotDeadlock"
+          ],
+          "hints": [
+            { "label": "Nudge", "content": "The deadlock is inside Polly, not in your code. The circuit breaker serializes its state transitions through an internal single-threaded task executor. When a task completes and a continuation has already been attached, something about how that continuation runs causes the executor's own thread to block waiting for itself. What in .NET controls whether a continuation runs inline on the completing thread, or on the thread pool?" },
+            { "label": "Area", "content": "Navigate to src/Polly.Core/CircuitBreaker/Controller/. There is a ScheduledTaskExecutor class that manages the circuit breaker's internal work queue using a dedicated processing thread. It uses a TaskCompletionSource to hand results back to callers. Look at exactly how that TaskCompletionSource is instantiated." },
+            { "label": "File & Line", "content": "In src/Polly.Core/CircuitBreaker/Controller/ScheduledTaskExecutor.cs, find: var source = new TaskCompletionSource<object>(); Without TaskCreationOptions.RunContinuationsAsynchronously, calling SetResult() on this source runs any waiting continuations synchronously on the executor thread. If a continuation tries to schedule more work through the executor, both sides wait on each other indefinitely. Fix: new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously)." }
+          ]
+        }
+      ],
+      "pipeline": {
+        "runnerStyle": "vstest",
+        "sourceFile": "src/Polly.Core/CircuitBreaker/Controller/ScheduledTaskExecutor.cs",
+        "buggyLine": "var source = new TaskCompletionSource<object>();",
+        "fixedLine": "var source = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);",
+        "testProject": "test/Polly.Core.Tests/Polly.Core.Tests.csproj",
+        "targetFramework": "net8.0",
+        "sdkPin": "10.0.301",
+        "extraTestArgs": "-p:TreatWarningsAsErrors=false -p:CollectCoverage=false --filter \"FullyQualifiedName~ScheduleTask_InlineContinuationDoesNotDeadlock\""
+      }
+    }
+  ]
+}
