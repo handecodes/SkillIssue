@@ -26,7 +26,7 @@ else if (bug is null)
 else
 {
     <nav class="crumb" aria-label="Breadcrumb">
-        <a href="/">Challenges</a> &rsaquo; @bug.Repo.Name
+        <a href="/">Challenges</a> &rsaquo; @ForkSlug(bug.Repo.GitHubUrl)
     </nav>
     <p class="repo-byline">
         <code class="repo-lang">@bug.Repo.Language</code>@bug.Repo.Description
@@ -162,14 +162,14 @@ else
                             <span class="step-n" aria-hidden="true">01</span>
                             <span>
                                 <a href="@bug.Repo.GitHubUrl/fork" target="_blank" rel="noopener noreferrer">
-                                    Fork <strong style="color: var(--t1);">@bug.Repo.Name</strong> on GitHub
+                                    Fork <strong style="color: var(--t1);">@ForkSlug(bug.Repo.GitHubUrl)</strong> on GitHub
                                     <span class="visually-hidden">(opens in new tab)</span>
                                 </a>
                             </span>
                         </li>
                         <li>
                             <span class="step-n" aria-hidden="true">02</span>
-                            <span>Clone your fork and run <code style="color: var(--gold);">dotnet test</code> to reproduce the failure</span>
+                            <span>Clone your fork and run the tests to reproduce the failure</span>
                         </li>
                         <li>
                             <span class="step-n" aria-hidden="true">03</span>
@@ -260,6 +260,10 @@ else
     private string activeTab = "terminal";
     private static readonly string[] TabOrder = ["problems", "output", "terminal"];
     private ElementReference tabRefProblems, tabRefOutput, tabRefTerminal;
+
+    // Display the repo students actually fork (the seeded GitHubUrl), not the upstream library label.
+    private static string ForkSlug(string gitHubUrl) =>
+        gitHubUrl.Replace("https://github.com/", "", StringComparison.OrdinalIgnoreCase).TrimEnd('/');
 
     private void ActivateTab(string tab) => activeTab = tab;
 
