@@ -28,6 +28,7 @@ public class ChallengeService(IDbContextFactory<AppDbContext> factory) : IChalle
             .Include(b => b.Repo)
             .Include(b => b.Hints.OrderBy(h => h.Order))
             .Include(b => b.FailingTests.OrderBy(f => f.Order))
+            .Where(b => b.Repo.IsActive)
             .FirstOrDefaultAsync(b => b.Id == bugId);
     }
 }

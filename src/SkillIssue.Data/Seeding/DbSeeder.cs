@@ -37,7 +37,7 @@ public static class DbSeeder
     private static Repo HumanizerRepo() => new()
     {
         Name        = "Humanizr/Humanizer",
-        GitHubUrl   = "https://github.com/Humanizr/Humanizer",
+        GitHubUrl   = "https://github.com/handecodes/skillissue-humanizer",
         Language    = "C#",
         Description = "A .NET library for making strings, numbers, dates, times and quantities human-readable. MIT licensed.",
         IsActive    = true,
@@ -46,18 +46,18 @@ public static class DbSeeder
             new Bug
             {
                 Title      = "Pascalize() silently drops digits at word boundaries",
-                Brief      = "\"customer name 1\".Pascalize() returns \"CustomerName\" instead of \"CustomerName1\". The regex pattern that drives Pascalize() and Camelize() only matches ASCII letters as word-start characters, so digits and symbols after a space, underscore, or hyphen are silently discarded. Fix the pattern so every character type is preserved.\n\nFork the repo, check out the challenge commit, fix the bug, then push — the existing test suite will verify the result.\n\n    git checkout 21155f64\n\nSource: Humanizr/Humanizer (MIT) — fix introduced in PR #1684.",
+                Brief      = "\"customer name 1\".Pascalize() returns \"CustomerName\" instead of \"CustomerName1\" — the trailing digit silently disappears, and \"customer name $\" loses its \"$\" the same way. Pascalize() capitalises the first letter of each word and joins them, but somewhere in that process every character that isn't a letter is being thrown away instead of preserved. Find where non-letter characters are dropped and keep them.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: Humanizr/Humanizer (MIT).",
                 ErrorMessage = "Assert.Equal(\"CustomerName1\", \"customer name 1\".Pascalize())\nExpected: CustomerName1\nActual:   CustomerName",
                 Difficulty = Difficulty.Easy,
                 FailingTests =
                 [
-                    new FailingTest { Order = 1, TestName = "Humanizer.Tests.InflectorTests.PascalizeTests (InlineData: \"customer name 1\", \"CustomerName1\")" }
+                    new FailingTest { Order = 1, TestName = "InflectorTests.Pascalize (InlineData: \"customer name 1\", \"CustomerName1\")" }
                 ],
                 Hints =
                 [
                     new HintTier { Order = 1, Label = "Nudge",      Content = "Pascalize() works perfectly for letters-only words like \"customer name\". Try it on a string where the last word starts with a digit, like \"customer name 1\". The digit disappears from the output — why might that be?" },
-                    new HintTier { Order = 2, Label = "Area",       Content = "Look in src/Humanizer/InflectorExtensions.cs. There is a static constant that stores the regex pattern used by Pascalize and Camelize. What character class does it use to match the first character of each capitalised word?" },
-                    new HintTier { Order = 3, Label = "File & Line", Content = "In InflectorExtensions.cs, the constant PascalizePattern contains a capturing group ([a-zA-Z]). That class matches only ASCII letters — digits and symbols don't match, so they get dropped. Change [a-zA-Z] to . (dot) to match any character." }
+                    new HintTier { Order = 2, Label = "Area",       Content = "Look in src/Humanizer/InflectorExtensions.cs. Pascalize() has a fast path for ASCII input — a method called TryPascalizeAscii that walks the string character by character and builds the result in a buffer. Read that loop carefully: which characters get copied into the buffer, and which get skipped?" },
+                    new HintTier { Order = 3, Label = "File & Line", Content = "In InflectorExtensions.cs, inside TryPascalizeAscii, the loop treats spaces/underscores/hyphens as word separators and then has a guard that skips any character where char.IsLetter(c) is false — so digits and symbols are continue'd past and never written to the buffer. Remove that non-letter guard so every non-separator character is appended." }
                 ]
             }
         ]
@@ -68,7 +68,7 @@ public static class DbSeeder
     private static Repo PollyRepo() => new()
     {
         Name        = "App-vNext/Polly",
-        GitHubUrl   = "https://github.com/App-vNext/Polly",
+        GitHubUrl   = "https://github.com/handecodes/skillissue-polly",
         Language    = "C#",
         Description = "A .NET resilience and transient-fault-handling library. BSD 3-Clause licensed.",
         IsActive    = true,
@@ -77,7 +77,7 @@ public static class DbSeeder
             new Bug
             {
                 Title      = "CircuitBreaker hangs the calling thread under concurrent use",
-                Brief      = "A ResiliencePipeline with a circuit-breaker strategy causes the application to deadlock. Under concurrent executions the call never returns: no exception is thrown, no timeout fires, and the circuit state never changes. The root cause is not in user code and does not appear in any stack trace.\n\nFork the repo, check out the challenge commit, find and remove the deadlock, then push.\n\n    git checkout aa841d58\n\nSource: App-vNext/Polly (BSD 3-Clause) — fix introduced in commit 016dd909.",
+                Brief      = "A ResiliencePipeline with a circuit-breaker strategy causes the application to deadlock. Under concurrent executions the call never returns: no exception is thrown, no timeout fires, and the circuit state never changes. The root cause is not in user code and does not appear in any stack trace.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: App-vNext/Polly (BSD 3-Clause).",
                 ErrorMessage = "Expected value to be True, but found False.\n  at ScheduledTaskExecutorTests.ScheduleTask_InlineContinuationDoesNotDeadlock\nThe scheduled task did not complete within the timeout — an inline continuation blocked the executor's own thread.",
                 Difficulty = Difficulty.Hard,
                 FailingTests =
@@ -102,7 +102,7 @@ public static class DbSeeder
         GitHubUrl   = "https://github.com/castleproject/Core",
         Language    = "C#",
         Description = "Castle Core, including Castle DynamicProxy, Logging Abstractions and DictionaryAdapter. Apache 2.0 licensed.",
-        IsActive    = true,
+        IsActive    = false, // not yet proven through the fork pipeline
         Bugs =
         [
             new Bug
@@ -150,7 +150,7 @@ public static class DbSeeder
         GitHubUrl   = "https://github.com/nunit/nunit",
         Language    = "C#",
         Description = "NUnit is a unit-testing framework for all .NET languages. MIT licensed.",
-        IsActive    = true,
+        IsActive    = false, // not yet proven through the fork pipeline
         Bugs =
         [
             new Bug
@@ -215,7 +215,7 @@ public static class DbSeeder
         GitHubUrl   = "https://github.com/JamesNK/Newtonsoft.Json",
         Language    = "C#",
         Description = "Json.NET is a popular high-performance JSON framework for .NET. MIT licensed.",
-        IsActive    = true,
+        IsActive    = false, // not yet proven through the fork pipeline
         Bugs =
         [
             new Bug
@@ -246,7 +246,7 @@ public static class DbSeeder
         GitHubUrl   = "https://github.com/autofac/Autofac",
         Language    = "C#",
         Description = "An IoC container for .NET. MIT licensed.",
-        IsActive    = true,
+        IsActive    = false, // not yet proven through the fork pipeline
         Bugs =
         [
             new Bug
