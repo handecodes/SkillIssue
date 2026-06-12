@@ -513,6 +513,12 @@ span.ide-tab { opacity: 0.45; cursor: default; pointer-events: none; }
 
 .step-list li:last-child { border-bottom: none; }
 .step-n { font-family: var(--mono); font-size: 10px; color: var(--gold); min-width: 14px; flex-shrink: 0; } /* a11y */
+.repro-cmd {
+  display: block; margin-top: 6px; padding: 8px 10px;
+  font-family: var(--mono); font-size: 12px; color: var(--gold);
+  background: var(--bg-3); border: 1px solid var(--line); border-radius: 4px;
+  white-space: pre-wrap; word-break: break-all;
+}
 
 /* Result strips */
 .result-strip {

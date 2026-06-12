@@ -8,6 +8,7 @@ public class Bug
     public string Title { get; set; } = "";
     public string Brief { get; set; } = "";
     public string ErrorMessage { get; set; } = "";
+    public string? ReproCommand { get; set; }
     public Difficulty Difficulty { get; set; }
     public List<FailingTest> FailingTests { get; set; } = [];
     public List<HintTier> Hints { get; set; } = [];

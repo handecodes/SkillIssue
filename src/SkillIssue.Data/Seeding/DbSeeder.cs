@@ -48,6 +48,7 @@ public static class DbSeeder
                 Title      = "Pascalize() silently drops digits at word boundaries",
                 Brief      = "\"customer name 1\".Pascalize() returns \"CustomerName\" instead of \"CustomerName1\" — the trailing digit silently disappears, and \"customer name $\" loses its \"$\" the same way. Pascalize() capitalises the first letter of each word and joins them, but somewhere in that process every character that isn't a letter is being thrown away instead of preserved. Find where non-letter characters are dropped and keep them.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: Humanizr/Humanizer (MIT).",
                 ErrorMessage = "Assert.Equal(\"CustomerName1\", \"customer name 1\".Pascalize())\nExpected: CustomerName1\nActual:   CustomerName",
+                ReproCommand = "dotnet run --project tests/Humanizer.Tests/Humanizer.Tests.csproj -f net10.0 -p:TargetFrameworks=net10.0 -- --filter-method \"InflectorTests.Pascalize\"",
                 Difficulty = Difficulty.Easy,
                 FailingTests =
                 [
@@ -79,6 +80,7 @@ public static class DbSeeder
                 Title      = "CircuitBreaker hangs the calling thread under concurrent use",
                 Brief      = "A ResiliencePipeline with a circuit-breaker strategy causes the application to deadlock. Under concurrent executions the call never returns: no exception is thrown, no timeout fires, and the circuit state never changes. The root cause is not in user code and does not appear in any stack trace.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: App-vNext/Polly (BSD 3-Clause).",
                 ErrorMessage = "Expected value to be True, but found False.\n  at ScheduledTaskExecutorTests.ScheduleTask_InlineContinuationDoesNotDeadlock\nThe scheduled task did not complete within the timeout — an inline continuation blocked the executor's own thread.",
+                ReproCommand = "dotnet test test/Polly.Core.Tests/Polly.Core.Tests.csproj -f net8.0 -p:TreatWarningsAsErrors=false -p:CollectCoverage=false --filter \"FullyQualifiedName~ScheduleTask_InlineContinuationDoesNotDeadlock\"",
                 Difficulty = Difficulty.Hard,
                 FailingTests =
                 [
@@ -110,6 +112,7 @@ public static class DbSeeder
                 Title      = "Proxy merges interface methods that differ only in letter case",
                 Brief      = "Castle DynamicProxy can't proxy an interface that declares two methods whose names differ only in letter case — like Abc() and aBc(). Instead of generating a distinct proxy member for each, the generator treats them as the same method and throws while building the proxy. Methods, events, and properties are all affected, because events and properties are backed by methods (add_Abc, get_Abc).\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: castleproject/Core (Apache 2.0).",
                 ErrorMessage = "Castle.DynamicProxy.DynamicProxyException : Duplicate element: Castle.DynamicProxy.Generators.MetaMethod\n  at CaseSensitivityTestCase.Can_distinguish_differently_cased_methods_during_interception\nProxying an interface with two methods that differ only in case threw instead of generating distinct members.",
+                ReproCommand = "dotnet test src/Castle.Core.Tests/Castle.Core.Tests.csproj -f net10.0 -p:TargetFrameworks=net10.0 --filter \"FullyQualifiedName~CaseSensitivityTestCase\"",
                 Difficulty = Difficulty.Medium,
                 FailingTests =
                 [

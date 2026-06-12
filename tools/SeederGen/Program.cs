@@ -31,6 +31,7 @@ internal sealed record Bug(
     [property: JsonPropertyName("title")]        string Title,
     [property: JsonPropertyName("brief")]        string Brief,
     [property: JsonPropertyName("errorMessage")] string ErrorMessage,
+    [property: JsonPropertyName("reproCommand")] string? ReproCommand,
     [property: JsonPropertyName("difficulty")]   string Difficulty,
     [property: JsonPropertyName("failingTests")] List<string> FailingTests,
     [property: JsonPropertyName("hints")]        List<Hint> Hints);
@@ -149,6 +150,7 @@ internal static class Program
             Str(Prop(init, "Title")),
             Str(Prop(init, "Brief")),
             Str(Prop(init, "ErrorMessage")),
+            StrOrNull(Prop(init, "ReproCommand")),
             Member(Prop(init, "Difficulty")),
             failing,
             hints);
@@ -241,6 +243,8 @@ internal static class Program
         sb.AppendLine($"            Title = {Lit(b.Title)},");
         sb.AppendLine($"            Brief = {Lit(b.Brief)},");
         sb.AppendLine($"            ErrorMessage = {Lit(b.ErrorMessage)},");
+        if (b.ReproCommand is not null)
+            sb.AppendLine($"            ReproCommand = {Lit(b.ReproCommand)},");
         sb.AppendLine($"            Difficulty = Difficulty.{b.Difficulty},");
         sb.AppendLine("            FailingTests =");
         sb.AppendLine("            [");
@@ -295,6 +299,9 @@ internal static class Program
         e is LiteralExpressionSyntax l && l.IsKind(SyntaxKind.StringLiteralExpression)
             ? l.Token.ValueText
             : throw new InvalidOperationException($"Expected string literal, got {e?.Kind().ToString() ?? "null"}");
+
+    // Absent property (e.g. ReproCommand on inactive rows) → null, not an error.
+    private static string? StrOrNull(ExpressionSyntax? e) => e is null ? null : Str(e);
 
     private static bool Bool(ExpressionSyntax? e) =>
         e is LiteralExpressionSyntax l && l.IsKind(SyntaxKind.TrueLiteralExpression);

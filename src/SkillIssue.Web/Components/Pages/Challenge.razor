@@ -178,7 +178,17 @@ else
                         </li>
                         <li>
                             <span class="step-n" aria-hidden="true">03</span>
-                            <span>Clone your fork and run the tests to reproduce the failure</span>
+                            @if (!string.IsNullOrWhiteSpace(bug.ReproCommand))
+                            {
+                                <span>
+                                    Clone your fork and run the failing test to reproduce it:
+                                    <code class="repro-cmd">@bug.ReproCommand</code>
+                                </span>
+                            }
+                            else
+                            {
+                                <span>Clone your fork and run the tests to reproduce the failure</span>
+                            }
                         </li>
                         <li>
                             <span class="step-n" aria-hidden="true">04</span>
