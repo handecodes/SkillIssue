@@ -198,17 +198,18 @@ public static class DbSeeder
     private static Repo NewtonsoftJsonRepo() => new()
     {
         Name        = "JamesNK/Newtonsoft.Json",
-        GitHubUrl   = "https://github.com/JamesNK/Newtonsoft.Json",
+        GitHubUrl   = "https://github.com/handecodes/skillissue-newtonsoft",
         Language    = "C#",
         Description = "Json.NET is a popular high-performance JSON framework for .NET. MIT licensed.",
-        IsActive    = false, // not yet proven through the fork pipeline
+        IsActive    = true,
         Bugs =
         [
             new Bug
             {
                 Title      = "JToken.FromObject() gives null string properties the wrong token type",
-                Brief      = "When building a JObject that contains a null string property and converting it with JToken.FromObject(), the null property gets a token type of JTokenType.String instead of JTokenType.Null. Code that checks token.Type == JTokenType.Null to detect missing values will not work correctly.\n\nFork the repo, check out the challenge commit, find and fix the type handling, then push.\n\n    git checkout abb99e96\n\nSource: JamesNK/Newtonsoft.Json (MIT) — fix introduced in PR #2796.",
+                Brief      = "When you build a JObject with a null string property and convert it with JToken.FromObject(), the null property comes back typed as JTokenType.String instead of JTokenType.Null. Code that checks token.Type == JTokenType.Null to detect missing values silently misses them.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: JamesNK/Newtonsoft.Json (MIT).",
                 ErrorMessage = "Expected: Null\nBut was:  String\n  at Newtonsoft.Json.Tests.Issues.Issue2775.TokenType\nJToken.FromObject() serialised a null string property as JTokenType.String instead of JTokenType.Null.",
+                ReproCommand = "dotnet test Src/Newtonsoft.Json.Tests/Newtonsoft.Json.Tests.csproj -f net8.0 -p:TargetFrameworks=net8.0 --filter \"FullyQualifiedName~Issue2775.TokenType\"",
                 Difficulty = Difficulty.Medium,
                 FailingTests =
                 [
