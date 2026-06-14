@@ -28,7 +28,8 @@ public static class DbSeeder
             NUnitRepo(),
             AutofacRepo(),
             NewtonsoftJsonRepo(),
-            NodaTimeRepo()
+            NodaTimeRepo(),
+            MoreLinqRepo()
         );
         await db.SaveChangesAsync();
     }
@@ -252,6 +253,38 @@ public static class DbSeeder
                     new HintTier { Order = 1, Label = "Nudge",      Content = "30 January plus one month should give 28 February, but you get an invalid 30 February. Only month-end dates that don't fit the destination month are wrong — mid-month dates are fine. The day IS being clamped, just against the wrong month. Which month's length should bound the resulting day: the one you started in, or the one you land in?" },
                     new HintTier { Order = 2, Label = "Area",       Content = "LocalDate.PlusMonths doesn't do the arithmetic itself — it delegates to MonthsPeriodField, which calls the calendar's YearMonthDayCalculator.AddMonths. For the ISO/Gregorian calendar that is RegularYearMonthDayCalculator.AddMonths. After it works out the destination year and month, it clamps the day of month to a maximum. Look at how that maximum is computed." },
                     new HintTier { Order = 3, Label = "File & Line", Content = "In src/NodaTime/Calendars/RegularYearMonthDayCalculator.cs, AddMonths computes int maxDay = GetDaysInMonth(thisYear, thisMonth) — that is the length of the ORIGINAL month (thisYear/thisMonth), so 30 January is clamped against January's 31 days and stays 30. It must clamp against the DESTINATION month: change it to GetDaysInMonth(yearToUse, monthToUse)." }
+                ]
+            }
+        ]
+    };
+
+    // ── MoreLINQ ──────────────────────────────────────────────────────────────
+
+    private static Repo MoreLinqRepo() => new()
+    {
+        Name        = "morelinq/MoreLINQ",
+        GitHubUrl   = "https://github.com/handecodes/skillissue-morelinq",
+        Language    = "C#",
+        Description = "MoreLINQ — extensions to LINQ to Objects. Apache 2.0 licensed.",
+        IsActive    = true,
+        Bugs =
+        [
+            new Bug
+            {
+                Title      = "AtLeast(n) returns false for a sequence of exactly n elements",
+                Brief      = "AtLeast(n) should be true when a sequence has n or more elements — the lower bound is inclusive. Instead a sequence of exactly n elements reports false: 'at least n' has quietly become 'more than n'. The same off-by-one hits the boundaries of AtMost, Exactly, and CountBetween, because all four share one comparison.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: morelinq/MoreLINQ (Apache 2.0).",
+                ErrorMessage = "Expected: True\nBut was:  False\n  at MoreLinq.Test.AtLeastTest.AtLeast(Sequence[1], 1)\nAtLeast(1) returned false for a one-element sequence — the inclusive lower bound was treated as exclusive.",
+                ReproCommand = "dotnet test MoreLinq.Test/MoreLinq.Test.csproj -c Release -f net8.0 --filter \"FullyQualifiedName~AtLeastTest.AtLeast\"",
+                Difficulty = Difficulty.Medium,
+                FailingTests =
+                [
+                    new FailingTest { Order = 1, TestName = "MoreLinq.Test.AtLeastTest.AtLeast" }
+                ],
+                Hints =
+                [
+                    new HintTier { Order = 1, Label = "Nudge",      Content = "AtLeast(n) should be true when the sequence has n or more elements — the boundary is inclusive. Right now a sequence of exactly n elements reports false: the 'or more' boundary has become 'strictly more'. AtMost, Exactly, and CountBetween are wrong at their boundaries too. What single comparison do all four operators share?" },
+                    new HintTier { Order = 2, Label = "Area",       Content = "There is no AtLeast.cs — AtLeast, AtMost, Exactly, and CountBetween all live in MoreLinq/CountMethods.cs, and each delegates to a private helper, QuantityIterator(source, limit, min, max), which counts the elements and returns whether the count falls within [min, max]. The bug is in that one shared return expression, not in any individual operator." },
+                    new HintTier { Order = 3, Label = "File & Line", Content = "In MoreLinq/CountMethods.cs, QuantityIterator ends with return count > min && count <= max; — the lower bound uses > instead of >=, so a count exactly equal to min (AtLeast(n) on n elements, or Exactly(n) on n) is rejected. Change it to return count >= min && count <= max;." }
                 ]
             }
         ]

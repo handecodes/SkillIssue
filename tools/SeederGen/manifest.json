@@ -307,6 +307,50 @@
         "sdkPin": "10.0.101 (global.json)",
         "extraTestArgs": "-c Release --filter \"FullyQualifiedName~LocalDateTest.PlusMonth_WithTruncation\""
       }
+    },
+    {
+      "id": "MoreLinq",
+      "name": "morelinq/MoreLINQ",
+      "gitHubUrl": "https://github.com/handecodes/skillissue-morelinq",
+      "language": "C#",
+      "description": "MoreLINQ — extensions to LINQ to Objects. Apache 2.0 licensed.",
+      "isActive": true,
+      "bugs": [
+        {
+          "title": "AtLeast(n) returns false for a sequence of exactly n elements",
+          "brief": "AtLeast(n) should be true when a sequence has n or more elements — the lower bound is inclusive. Instead a sequence of exactly n elements reports false: 'at least n' has quietly become 'more than n'. The same off-by-one hits the boundaries of AtMost, Exactly, and CountBetween, because all four share one comparison.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: morelinq/MoreLINQ (Apache 2.0).",
+          "errorMessage": "Expected: True\nBut was:  False\n  at MoreLinq.Test.AtLeastTest.AtLeast(Sequence[1], 1)\nAtLeast(1) returned false for a one-element sequence — the inclusive lower bound was treated as exclusive.",
+          "reproCommand": "dotnet test MoreLinq.Test/MoreLinq.Test.csproj -c Release -f net8.0 --filter \"FullyQualifiedName~AtLeastTest.AtLeast\"",
+          "difficulty": "Medium",
+          "failingTests": [
+            "MoreLinq.Test.AtLeastTest.AtLeast"
+          ],
+          "hints": [
+            {
+              "label": "Nudge",
+              "content": "AtLeast(n) should be true when the sequence has n or more elements — the boundary is inclusive. Right now a sequence of exactly n elements reports false: the 'or more' boundary has become 'strictly more'. AtMost, Exactly, and CountBetween are wrong at their boundaries too. What single comparison do all four operators share?"
+            },
+            {
+              "label": "Area",
+              "content": "There is no AtLeast.cs — AtLeast, AtMost, Exactly, and CountBetween all live in MoreLinq/CountMethods.cs, and each delegates to a private helper, QuantityIterator(source, limit, min, max), which counts the elements and returns whether the count falls within [min, max]. The bug is in that one shared return expression, not in any individual operator."
+            },
+            {
+              "label": "File & Line",
+              "content": "In MoreLinq/CountMethods.cs, QuantityIterator ends with return count > min && count <= max; — the lower bound uses > instead of >=, so a count exactly equal to min (AtLeast(n) on n elements, or Exactly(n) on n) is rejected. Change it to return count >= min && count <= max;."
+            }
+          ]
+        }
+      ],
+      "pipeline": {
+        "runnerStyle": "vstest",
+        "sourceFile": "MoreLinq/CountMethods.cs",
+        "buggyLine": "return count > min && count <= max;",
+        "fixedLine": "return count >= min && count <= max;",
+        "testProject": "MoreLinq.Test/MoreLinq.Test.csproj",
+        "targetFramework": "net8.0",
+        "sdkPin": "10.0.x (global.json) + net8.0 runtime",
+        "extraTestArgs": "-c Release --filter \"FullyQualifiedName~AtLeastTest.AtLeast\""
+      }
     }
   ]
 }
