@@ -133,61 +133,28 @@ public static class DbSeeder
     private static Repo NUnitRepo() => new()
     {
         Name        = "nunit/nunit",
-        GitHubUrl   = "https://github.com/nunit/nunit",
+        GitHubUrl   = "https://github.com/handecodes/skillissue-nunit",
         Language    = "C#",
         Description = "NUnit is a unit-testing framework for all .NET languages. MIT licensed.",
-        IsActive    = false, // not yet proven through the fork pipeline
+        IsActive    = true,
         Bugs =
         [
             new Bug
             {
-                Title      = "InstancePerTestCase IDisposable fixture leaks one instance per run",
-                Brief      = "A test fixture annotated with [FixtureLifeCycle(LifeCycle.InstancePerTestCase)] and implementing IDisposable should dispose each instance after its test completes. Running a two-test fixture reveals a discrepancy: the constructor is called three times, but Dispose is only called twice. The extra construction happens silently before any test runs and the created instance is never disposed.\n\nFork the repo, check out the challenge commit, fix the leak, then push.\n\n    git checkout 34e988ba\n\nSource: nunit/nunit (MIT) — fix introduced in PR #3844.",
-                ErrorMessage = "Assert.AreEqual(3, _disposeCount) Failure\nExpected: 3\nActual:   2\n  at LifeCycleTests.InstancePerTestCase_IDisposable_DisposesAllInstances",
+                Title      = "Is.SupersetOf() behaves like Is.SubsetOf() — genuine supersets are rejected",
+                Brief      = "A collection that clearly contains every element of the expected set should satisfy Is.SupersetOf(expected). Instead the assertion fails for real supersets and passes for subsets — the superset check has quietly become a subset check. Is.SubsetOf() still works correctly, so the two checks behave as mirror images of each other.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: nunit/nunit (MIT).",
+                ErrorMessage = "Expected: superset of < 1, 2, 3, 4, 5 >\n  But was:  < 1, 2, 3, 4, 5, 6 >\n  at NUnit.Framework.Tests.Constraints.CollectionSupersetConstraintTests.SucceedsWithGoodValues\nA collection containing every expected element was reported as not a superset.",
+                ReproCommand = "dotnet test src/NUnitFramework/tests/nunit.framework.tests.csproj -c Release -f net8.0 -p:NUnitRuntimeFrameworks=net8.0 --filter \"FullyQualifiedName~CollectionSupersetConstraintTests.SucceedsWithGoodValues\"",
                 Difficulty = Difficulty.Medium,
                 FailingTests =
                 [
-                    new FailingTest { Order = 1, TestName = "NUnit.Framework.Tests.LifeCycleTests.InstancePerTestCase_IDisposable_DisposesAllInstances" }
+                    new FailingTest { Order = 1, TestName = "NUnit.Framework.Tests.Constraints.CollectionSupersetConstraintTests.SucceedsWithGoodValues" }
                 ],
                 Hints =
                 [
-                    new HintTier { Order = 1, Label = "Nudge",      Content = "Add a counter to your fixture's constructor and Dispose. With LifeCycle.InstancePerTestCase and two test methods, the constructor fires three times but Dispose only twice. The third instance is created before any test runs. Who creates it, and why?" },
-                    new HintTier { Order = 2, Label = "Area",       Content = "The lifecycle management for InstancePerTestCase is in CompositeWorkItem. That class builds child work items and runs them in order. There is a OneTimeSetUp handling path that creates a temporary fixture instance to check for OneTimeSetUp methods. Does it clean up that instance?" },
-                    new HintTier { Order = 3, Label = "File & Line", Content = "In src/NUnitFramework/framework/Internal/Execution/CompositeWorkItem.cs, find where OneTimeSetUp is handled for InstancePerTestCase. A fixture object is created there but never disposed. Capture it in a local variable, and after OneTimeSetUp completes, call Dispose on it if it implements IDisposable." }
-                ]
-            },
-            new Bug
-            {
-                Title      = "CollectionEquivalent constraints throw NotSupportedException on ImmutableDictionary",
-                Brief      = "Comparing an ImmutableDictionary against a collection with Is.EquivalentTo(), Is.SubsetOf(), or Is.SupersetOf() throws a NotSupportedException. The same assertion works correctly with ordinary dictionaries and lists. The failure appears inside NUnit's constraint code — no assertion failure message is shown, only a raw exception.\n\nFork the repo, check out the challenge commit, fix the bug, then push.\n\n    git checkout f50cceb7\n\nSource: nunit/nunit (MIT) — fix introduced in PR #4098.",
-                ErrorMessage = "System.NotSupportedException: Specified IList value does not support SyncRoot.\n  at NUnit.Framework.Constraints.CollectionTally.TallyActual\n  at CollectionEquivalentConstraintTests.ImmutableDictionary_IsEquivalentTo_DoesNotThrow",
-                Difficulty = Difficulty.Medium,
-                FailingTests =
-                [
-                    new FailingTest { Order = 1, TestName = "NUnit.Framework.Tests.Constraints.CollectionEquivalentConstraintTests.ImmutableDictionary_IsEquivalentTo_DoesNotThrow" }
-                ],
-                Hints =
-                [
-                    new HintTier { Order = 1, Label = "Nudge",      Content = "The NotSupportedException message mentions SyncRoot. ImmutableDictionary explicitly throws NotSupportedException when SyncRoot is accessed. Something in NUnit's collection comparison path calls SyncRoot. Follow the constraint execution path to find where." },
-                    new HintTier { Order = 2, Label = "Area",       Content = "NUnit's collection constraints delegate work to CollectionTally. Inside it there is a helper that converts an ICollection to an ArrayList. Look at which ArrayList constructor overload is used — some constructors internally access the collection's SyncRoot as part of their implementation." },
-                    new HintTier { Order = 3, Label = "File & Line", Content = "In src/NUnitFramework/framework/Constraints/CollectionTally.cs, find the call new ArrayList(ic). The ArrayList(ICollection) constructor accesses ic.SyncRoot. Replace it with: var list = new ArrayList(ic.Count); foreach (var item in ic) list.Add(item); return list; Building the list element-by-element avoids touching SyncRoot entirely." }
-                ]
-            },
-            new Bug
-            {
-                Title      = "XML compound test filters select the wrong tests",
-                Brief      = "NUnit supports XML-based test filters such as <filter><or><cat>A</cat><cat>B</cat></or></filter>. When such a filter is loaded from XML and applied, it selects the wrong tests — either too many or none at all. Simple single-element filters work correctly. The bug is not in how the filter evaluates tests; it is in how the XML is parsed into the filter tree.\n\nFork the repo, check out the challenge commit, fix the bug, then push.\n\n    git checkout 9840405f\n\nSource: nunit/nunit (MIT) — fix introduced in PR #4760.",
-                ErrorMessage = "Assert.That(filter.Match(test), Is.True) Failure\nExpected: True\nActual:   False\n  at FilterTests.OrFilter_FromXml_MatchesExpectedTests\nParsed XML compound filter did not match tests it should have selected.",
-                Difficulty = Difficulty.Medium,
-                FailingTests =
-                [
-                    new FailingTest { Order = 1, TestName = "NUnit.Framework.Tests.Api.FilterTests.OrFilter_FromXml_MatchesExpectedTests" }
-                ],
-                Hints =
-                [
-                    new HintTier { Order = 1, Label = "Nudge",      Content = "A filter that works as a single <cat> element fails when wrapped in <or>. After parsing the XML, inspect the resulting filter tree — the children of the <or> node are likely attached at the wrong level. What happens in the XML parser when it encounters a closing element tag?" },
-                    new HintTier { Order = 2, Label = "Area",       Content = "TNode.FromXml parses XML into a parent-child tree of TNode objects. The method keeps a stack of parent nodes as it descends. When the XmlReader reports XmlNodeType.EndElement (a closing tag), what does the method do with the parent stack?" },
-                    new HintTier { Order = 3, Label = "File & Line", Content = "In src/NUnitFramework/framework/Api/TNode.cs, the XmlReader loop handles XmlNodeType.Element and XmlNodeType.Text but has no branch for XmlNodeType.EndElement. Add: else if (reader.NodeType == XmlNodeType.EndElement) { if (parents.Count > 0) parents.Pop(); } This pops the stack on every closing tag, keeping the tree structure correct." }
+                    new HintTier { Order = 1, Label = "Nudge",      Content = "Is.SupersetOf() and Is.SubsetOf() are near-mirror images: a superset of X means X has nothing missing from the actual collection; a subset of X means the actual collection has nothing beyond X. Here SupersetOf accepts subsets and rejects genuine supersets — the comparison is being run in the wrong direction. What is the one difference between the two checks?" },
+                    new HintTier { Order = 2, Label = "Area",       Content = "NUnit's collection comparison delegates to a tally helper that reports the items of one collection not present in the other. Both CollectionSubsetConstraint and CollectionSupersetConstraint call the same TallyResult helper, but they must pass the expected and actual collections in opposite order. Look at CollectionSupersetConstraint.Matches and compare its TallyResult call to the subset constraint's." },
+                    new HintTier { Order = 3, Label = "File & Line", Content = "In src/NUnitFramework/framework/Constraints/CollectionSupersetConstraint.cs, Matches calls TallyResult(_expected, actual) — that computes the items in actual that aren't in expected, which is a subset test. A superset test needs the items in expected that aren't in actual. Swap the arguments back to TallyResult(actual, _expected)." }
                 ]
             }
         ]
