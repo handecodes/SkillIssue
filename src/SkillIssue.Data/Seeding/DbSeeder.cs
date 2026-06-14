@@ -230,27 +230,28 @@ public static class DbSeeder
     private static Repo AutofacRepo() => new()
     {
         Name        = "autofac/Autofac",
-        GitHubUrl   = "https://github.com/autofac/Autofac",
+        GitHubUrl   = "https://github.com/handecodes/skillissue-autofac",
         Language    = "C#",
         Description = "An IoC container for .NET. MIT licensed.",
-        IsActive    = false, // not yet proven through the fork pipeline
+        IsActive    = true,
         Bugs =
         [
             new Bug
             {
-                Title      = "[ServiceKey] receives wrong value when resolving keyed services as a collection",
-                Brief      = "Autofac supports injecting the registration key into a component's constructor via the [ServiceKey] attribute. Resolving a component directly by key — container.ResolveKeyed<IService>(\"a\") — correctly populates [ServiceKey]. Resolving all keyed services as a collection via KeyedService.AnyKey produces components where [ServiceKey] is a random GUID rather than each component's actual key.\n\nFork the repo, check out the challenge commit, fix the bug, then push.\n\n    git checkout aab7ad63\n\nSource: autofac/Autofac (MIT) — fix introduced in PR #1476.",
-                ErrorMessage = "Assert.Equal(\"a\", services[0].Id) Failure\nExpected: a\nActual:   3fa85f64-5717-4562-b3fc-2c963f66afa6\n  at CollectionRegistrationSourceTests.ResolveAnyKeyWithInjectedKeyedParameter\n[ServiceKey] received a random GUID instead of the actual registration key.",
+                Title      = "SingleInstance() returns a new object on every resolve",
+                Brief      = "A type registered with .SingleInstance() should hand back the same shared object every time it is resolved. Instead the container returns a brand-new instance on every Resolve — as if it were registered transient — and, conversely, transient registrations get wrongly shared. The container's instance-sharing decision is inverted.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: autofac/Autofac (MIT).",
+                ErrorMessage = "Assert.Same() Failure: Values are not the same instance\n  at Autofac.Specification.Test.Lifetime.SingleInstanceTests.TypeAsSingleInstance\nA SingleInstance() registration returned a different object on each Resolve instead of one shared instance.",
+                ReproCommand = "dotnet test test/Autofac.Specification.Test/Autofac.Specification.Test.csproj -f net10.0 --filter \"FullyQualifiedName~SingleInstanceTests.TypeAsSingleInstance\"",
                 Difficulty = Difficulty.Hard,
                 FailingTests =
                 [
-                    new FailingTest { Order = 1, TestName = "Autofac.Test.Features.Collections.CollectionRegistrationSourceTests.ResolveAnyKeyWithInjectedKeyedParameter" }
+                    new FailingTest { Order = 1, TestName = "Autofac.Specification.Test.Lifetime.SingleInstanceTests.TypeAsSingleInstance" }
                 ],
                 Hints =
                 [
-                    new HintTier { Order = 1, Label = "Nudge",      Content = "ResolveKeyed<IService>(\"a\") populates [ServiceKey] correctly. Resolving the same component via an AnyKey collection does not. Both paths construct the same component but through different code routes. What is different about the ResolveRequest built for each item in an AnyKey collection versus a direct keyed resolve?" },
-                    new HintTier { Order = 2, Label = "Area",       Content = "When Autofac resolves a keyed IEnumerable, the work is done by CollectionRegistrationSource. Find the lambda that builds the collection items. For the AnyKey case, it calls a helper to fetch all specific-keyed registrations. Look at the ResolveRequest constructed for each item — specifically what service descriptor is used." },
-                    new HintTier { Order = 3, Label = "File & Line", Content = "In src/Autofac/Features/Collections/CollectionRegistrationSource.cs, the AnyKey path calls GetAllSpecificKeyedRegistrations() and then creates each ResolveRequest using the generic elementTypeService rather than each item's specific KeyedService. Because the request is not keyed, the [ServiceKey] parameter injector never fires. Change GetAllSpecificKeyedRegistrations to return (KeyedService, ServiceRegistration) pairs, and build each ResolveRequest using the specific KeyedService so the key flows into [ServiceKey] parameters." }
+                    new HintTier { Order = 1, Label = "Nudge",      Content = "SingleInstance() and InstancePerDependency() differ only in whether the container caches and reuses one instance or builds a fresh one each time. Here that decision is backwards: singletons aren't shared and transients are. A resolve flows through a pipeline of middleware steps — which step decides whether to reuse an already-built instance?" },
+                    new HintTier { Order = 2, Label = "Area",       Content = "Autofac resolves each request through a pipeline of IResolveMiddleware steps. One of them, in the Sharing phase, checks the registration's InstanceSharing to decide whether to create-and-cache a shared instance or just build a transient one. Look in src/Autofac/Core/Resolving/Middleware/ for the middleware that handles sharing." },
+                    new HintTier { Order = 3, Label = "File & Line", Content = "In src/Autofac/Core/Resolving/Middleware/SharingMiddleware.cs, the branch that creates and caches a shared instance is guarded by if (sharing == InstanceSharing.None) — that condition is inverted. Shared registrations (SingleInstance, per-scope) are the ones that should get a cached instance. Change the check to if (sharing == InstanceSharing.Shared)." }
                 ]
             }
         ]
