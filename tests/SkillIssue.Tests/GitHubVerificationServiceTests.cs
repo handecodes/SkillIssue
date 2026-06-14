@@ -9,10 +9,11 @@ public class GitHubVerificationServiceTests
     private const string UpstreamUrl = "https://github.com/expected/repo";
 
     // Fork-info JSON helpers
-    private static string ValidForkInfoJson(string parentUrl = UpstreamUrl) =>
+    private static string ValidForkInfoJson(string parentUrl = UpstreamUrl, string defaultBranch = "main") =>
         JsonSerializer.Serialize(new
         {
             fork = true,
+            default_branch = defaultBranch,
             parent = new { html_url = parentUrl, full_name = parentUrl.Split('/')[^1] }
         });
 
@@ -155,6 +156,32 @@ public class GitHubVerificationServiceTests
     }
 
     [Fact]
+    public async Task VerifyForkAsync_ScopesRunsQuery_ToChallengeWorkflowOnDefaultBranch()
+    {
+        // Regression guard: Step 2 must query OUR challenge workflow on the fork's default
+        // branch, NOT the repo-wide actions/runs endpoint. A fork inherits the upstream's own
+        // workflows; a repo-wide query can pick an unrelated workflow's conclusion. The previous
+        // tests passed by call-order and never inspected the URL, which is how this slipped in.
+        var runsBody = JsonSerializer.Serialize(new
+        {
+            workflow_runs = new[] { new { conclusion = "success", head_sha = "abc123" } }
+        });
+        var handler = new CapturingHttpHandler(
+            (HttpStatusCode.OK, ValidForkInfoJson(defaultBranch: "develop")),
+            (HttpStatusCode.OK, runsBody));
+        var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.github.com/") };
+        var sut = new GitHubVerificationService(client);
+
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl);
+
+        Assert.True(result.Passed);
+        var step2Url = handler.Requests[1].RequestUri!.ToString();
+        Assert.Contains("actions/workflows/challenge.yml/runs", step2Url);
+        Assert.Contains("branch=develop", step2Url);
+        Assert.DoesNotContain("/actions/runs?", step2Url);
+    }
+
+    [Fact]
     public async Task VerifyForkAsync_ReturnsFailure_WhenNoRunsFound()
     {
         var runsBody = JsonSerializer.Serialize(new { workflow_runs = Array.Empty<object>() });
@@ -165,7 +192,7 @@ public class GitHubVerificationServiceTests
         var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl);
 
         Assert.False(result.Passed);
-        Assert.Contains("No completed workflow runs", result.Message);
+        Assert.Contains("No completed challenge workflow runs", result.Message);
     }
 
     // -- URL format variants -------------------------------------------------
@@ -236,6 +263,22 @@ public class GitHubVerificationServiceTests
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
+            var (status, body) = responses[Math.Min(_index++, responses.Length - 1)];
+            return Task.FromResult(new HttpResponseMessage(status)
+            {
+                Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json")
+            });
+        }
+    }
+
+    private sealed class CapturingHttpHandler(params (HttpStatusCode status, string body)[] responses) : HttpMessageHandler
+    {
+        private int _index;
+        public List<HttpRequestMessage> Requests { get; } = [];
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            Requests.Add(request);
             var (status, body) = responses[Math.Min(_index++, responses.Length - 1)];
             return Task.FromResult(new HttpResponseMessage(status)
             {

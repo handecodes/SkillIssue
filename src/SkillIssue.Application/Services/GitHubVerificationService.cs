@@ -43,8 +43,14 @@ public partial class GitHubVerificationService(HttpClient httpClient) : IGitHubV
                 return new VerificationResult(false, null,
                     $"This fork's parent is '{repoData.Parent?.FullName}', not the expected challenge repo. Make sure you forked the right repository.");
 
-            // Step 2: check latest completed CI run on the fork.
-            var runsResponse = await httpClient.GetAsync($"repos/{owner}/{repo}/actions/runs?per_page=10&status=completed");
+            // Step 2: check the latest completed run of OUR challenge workflow on the fork's
+            // default branch. Scoping to challenge.yml + the default branch is required: a fork
+            // inherits the upstream's own workflows, which fire on the same push and often fail
+            // for unrelated reasons. A repo-wide "latest run" query would pick whichever of those
+            // sorts first, so a correct fix could read as failed (or a non-fix as passed).
+            var branch = Uri.EscapeDataString(repoData.DefaultBranch);
+            var runsResponse = await httpClient.GetAsync(
+                $"repos/{owner}/{repo}/actions/workflows/challenge.yml/runs?per_page=10&status=completed&branch={branch}");
 
             if (!runsResponse.IsSuccessStatusCode)
                 return new VerificationResult(false, null, $"GitHub API returned {(int)runsResponse.StatusCode}. Try again shortly.");
@@ -53,7 +59,7 @@ public partial class GitHubVerificationService(HttpClient httpClient) : IGitHubV
             var latestRun = data?.WorkflowRuns.FirstOrDefault();
 
             if (latestRun is null)
-                return new VerificationResult(false, null, "No completed workflow runs found. Make sure your fork has a CI workflow configured.");
+                return new VerificationResult(false, null, "No completed challenge workflow runs found on your fork's default branch. Make sure you enabled Actions and pushed your fix to the default branch.");
 
             bool passed = latestRun.Conclusion == "success";
             string message = passed
@@ -88,6 +94,9 @@ public partial class GitHubVerificationService(HttpClient httpClient) : IGitHubV
     {
         [JsonPropertyName("fork")]
         public bool Fork { get; set; }
+
+        [JsonPropertyName("default_branch")]
+        public string DefaultBranch { get; set; } = "";
 
         [JsonPropertyName("parent")]
         public ParentInfo? Parent { get; set; }
