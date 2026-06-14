@@ -27,7 +27,8 @@ public static class DbSeeder
             CastleCoreRepo(),
             NUnitRepo(),
             AutofacRepo(),
-            NewtonsoftJsonRepo()
+            NewtonsoftJsonRepo(),
+            NodaTimeRepo()
         );
         await db.SaveChangesAsync();
     }
@@ -219,6 +220,38 @@ public static class DbSeeder
                     new HintTier { Order = 1, Label = "Nudge",      Content = "SingleInstance() and InstancePerDependency() differ only in whether the container caches and reuses one instance or builds a fresh one each time. Here that decision is backwards: singletons aren't shared and transients are. A resolve flows through a pipeline of middleware steps — which step decides whether to reuse an already-built instance?" },
                     new HintTier { Order = 2, Label = "Area",       Content = "Autofac resolves each request through a pipeline of IResolveMiddleware steps. One of them, in the Sharing phase, checks the registration's InstanceSharing to decide whether to create-and-cache a shared instance or just build a transient one. Look in src/Autofac/Core/Resolving/Middleware/ for the middleware that handles sharing." },
                     new HintTier { Order = 3, Label = "File & Line", Content = "In src/Autofac/Core/Resolving/Middleware/SharingMiddleware.cs, the branch that creates and caches a shared instance is guarded by if (sharing == InstanceSharing.None) — that condition is inverted. Shared registrations (SingleInstance, per-scope) are the ones that should get a cached instance. Change the check to if (sharing == InstanceSharing.Shared)." }
+                ]
+            }
+        ]
+    };
+
+    // ── Noda Time ─────────────────────────────────────────────────────────────
+
+    private static Repo NodaTimeRepo() => new()
+    {
+        Name        = "nodatime/nodatime",
+        GitHubUrl   = "https://github.com/handecodes/skillissue-nodatime",
+        Language    = "C#",
+        Description = "Noda Time is a better date and time API for .NET. Apache 2.0 licensed.",
+        IsActive    = true,
+        Bugs =
+        [
+            new Bug
+            {
+                Title      = "PlusMonths() lands on an invalid end-of-month date (30 February)",
+                Brief      = "Adding one month to a month-end date should clamp the day to the last valid day of the destination month — 30 January plus one month is 28 February. Instead LocalDate.PlusMonths() produces an invalid 30 February: the day is clamped against the wrong month's length. Mid-month dates are unaffected, so only month-end arithmetic is wrong.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: nodatime/nodatime (Apache 2.0).",
+                ErrorMessage = "Expected: Monday, 28 February 2011\nBut was:  Wednesday, 30 February 2011\n  at NodaTime.Test.LocalDateTest.PlusMonth_WithTruncation\nLocalDate.PlusMonths() produced an invalid 30 February instead of clamping to 28 February.",
+                ReproCommand = "dotnet test src/NodaTime.Test/NodaTime.Test.csproj -c Release -f net10.0 --filter \"FullyQualifiedName~LocalDateTest.PlusMonth_WithTruncation\"",
+                Difficulty = Difficulty.Medium,
+                FailingTests =
+                [
+                    new FailingTest { Order = 1, TestName = "NodaTime.Test.LocalDateTest.PlusMonth_WithTruncation" }
+                ],
+                Hints =
+                [
+                    new HintTier { Order = 1, Label = "Nudge",      Content = "30 January plus one month should give 28 February, but you get an invalid 30 February. Only month-end dates that don't fit the destination month are wrong — mid-month dates are fine. The day IS being clamped, just against the wrong month. Which month's length should bound the resulting day: the one you started in, or the one you land in?" },
+                    new HintTier { Order = 2, Label = "Area",       Content = "LocalDate.PlusMonths doesn't do the arithmetic itself — it delegates to MonthsPeriodField, which calls the calendar's YearMonthDayCalculator.AddMonths. For the ISO/Gregorian calendar that is RegularYearMonthDayCalculator.AddMonths. After it works out the destination year and month, it clamps the day of month to a maximum. Look at how that maximum is computed." },
+                    new HintTier { Order = 3, Label = "File & Line", Content = "In src/NodaTime/Calendars/RegularYearMonthDayCalculator.cs, AddMonths computes int maxDay = GetDaysInMonth(thisYear, thisMonth) — that is the length of the ORIGINAL month (thisYear/thisMonth), so 30 January is clamped against January's 31 days and stays 30. It must clamp against the DESTINATION month: change it to GetDaysInMonth(yearToUse, monthToUse)." }
                 ]
             }
         ]

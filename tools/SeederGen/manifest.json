@@ -263,6 +263,50 @@
         "sdkPin": "10.0.100 (global.json)",
         "extraTestArgs": "--filter \"FullyQualifiedName~SingleInstanceTests.TypeAsSingleInstance\""
       }
+    },
+    {
+      "id": "NodaTime",
+      "name": "nodatime/nodatime",
+      "gitHubUrl": "https://github.com/handecodes/skillissue-nodatime",
+      "language": "C#",
+      "description": "Noda Time is a better date and time API for .NET. Apache 2.0 licensed.",
+      "isActive": true,
+      "bugs": [
+        {
+          "title": "PlusMonths() lands on an invalid end-of-month date (30 February)",
+          "brief": "Adding one month to a month-end date should clamp the day to the last valid day of the destination month — 30 January plus one month is 28 February. Instead LocalDate.PlusMonths() produces an invalid 30 February: the day is clamped against the wrong month's length. Mid-month dates are unaffected, so only month-end arithmetic is wrong.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: nodatime/nodatime (Apache 2.0).",
+          "errorMessage": "Expected: Monday, 28 February 2011\nBut was:  Wednesday, 30 February 2011\n  at NodaTime.Test.LocalDateTest.PlusMonth_WithTruncation\nLocalDate.PlusMonths() produced an invalid 30 February instead of clamping to 28 February.",
+          "reproCommand": "dotnet test src/NodaTime.Test/NodaTime.Test.csproj -c Release -f net10.0 --filter \"FullyQualifiedName~LocalDateTest.PlusMonth_WithTruncation\"",
+          "difficulty": "Medium",
+          "failingTests": [
+            "NodaTime.Test.LocalDateTest.PlusMonth_WithTruncation"
+          ],
+          "hints": [
+            {
+              "label": "Nudge",
+              "content": "30 January plus one month should give 28 February, but you get an invalid 30 February. Only month-end dates that don't fit the destination month are wrong — mid-month dates are fine. The day IS being clamped, just against the wrong month. Which month's length should bound the resulting day: the one you started in, or the one you land in?"
+            },
+            {
+              "label": "Area",
+              "content": "LocalDate.PlusMonths doesn't do the arithmetic itself — it delegates to MonthsPeriodField, which calls the calendar's YearMonthDayCalculator.AddMonths. For the ISO/Gregorian calendar that is RegularYearMonthDayCalculator.AddMonths. After it works out the destination year and month, it clamps the day of month to a maximum. Look at how that maximum is computed."
+            },
+            {
+              "label": "File & Line",
+              "content": "In src/NodaTime/Calendars/RegularYearMonthDayCalculator.cs, AddMonths computes int maxDay = GetDaysInMonth(thisYear, thisMonth) — that is the length of the ORIGINAL month (thisYear/thisMonth), so 30 January is clamped against January's 31 days and stays 30. It must clamp against the DESTINATION month: change it to GetDaysInMonth(yearToUse, monthToUse)."
+            }
+          ]
+        }
+      ],
+      "pipeline": {
+        "runnerStyle": "vstest",
+        "sourceFile": "src/NodaTime/Calendars/RegularYearMonthDayCalculator.cs",
+        "buggyLine": "int maxDay = GetDaysInMonth(thisYear, thisMonth);",
+        "fixedLine": "int maxDay = GetDaysInMonth(yearToUse, monthToUse);",
+        "testProject": "src/NodaTime.Test/NodaTime.Test.csproj",
+        "targetFramework": "net10.0",
+        "sdkPin": "10.0.101 (global.json)",
+        "extraTestArgs": "-c Release --filter \"FullyQualifiedName~LocalDateTest.PlusMonth_WithTruncation\""
+      }
     }
   ]
 }
