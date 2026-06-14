@@ -351,6 +351,50 @@
         "sdkPin": "10.0.x (global.json) + net8.0 runtime",
         "extraTestArgs": "-c Release --filter \"FullyQualifiedName~AtLeastTest.AtLeast\""
       }
+    },
+    {
+      "id": "Stateless",
+      "name": "dotnet-state-machine/stateless",
+      "gitHubUrl": "https://github.com/handecodes/skillissue-stateless",
+      "language": "C#",
+      "description": "Stateless — a hierarchical state machine library for .NET. Apache 2.0 licensed.",
+      "isActive": true,
+      "bugs": [
+        {
+          "title": "Entering a substate directly from its superstate skips the substate's OnEntry",
+          "brief": "In a hierarchical state machine, transitioning from a parent (super)state straight into one of its child (sub)states should run the child's OnEntry action. Instead the child's OnEntry is silently skipped. Entering the same substate from an unrelated outside state works fine — only the transition down from the immediate superstate is wrong.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: dotnet-state-machine/stateless (Apache 2.0).",
+          "errorMessage": "Assert.True() Failure\nExpected: True\nActual:   False\n  at Stateless.Tests.StateRepresentationFixture.WhenTransitioningFromSubToSuperstate_SubstateEntryActionsExecuted\nThe substate's OnEntry action did not run when the substate was entered from its superstate.",
+          "reproCommand": "dotnet test test/Stateless.Tests/Stateless.Tests.csproj -c Release -f net9.0 --filter \"FullyQualifiedName~StateRepresentationFixture.WhenTransitioningFromSubToSuperstate_SubstateEntryActionsExecuted\"",
+          "difficulty": "Hard",
+          "failingTests": [
+            "Stateless.Tests.StateRepresentationFixture.WhenTransitioningFromSubToSuperstate_SubstateEntryActionsExecuted"
+          ],
+          "hints": [
+            {
+              "label": "Nudge",
+              "content": "Transitioning from a parent state straight into one of its child states never runs the child's OnEntry — yet entering that same child from an unrelated outside state works. The code that decides whether to run a state's entry actions is judging where the transition came from incorrectly: it thinks the source is already 'inside' the state being entered when it isn't."
+            },
+            {
+              "label": "Area",
+              "content": "Entry actions are executed by StateRepresentation.Enter, which skips a state's entry actions when the transition's source is already inside that state. The hierarchy is navigated by two deceptively similar helpers: Includes walks DOWN (is the argument this state or one of its descendants?), while IsIncludedIn walks UP (is the argument this state or one of its ancestors?). Look at which one Enter applies to transition.Source."
+            },
+            {
+              "label": "File & Line",
+              "content": "In src/Stateless/StateRepresentation.cs, Enter guards entry execution with else if (!IsIncludedIn(transition.Source)). IsIncludedIn walks UP the hierarchy, so when you enter a substate whose source is its superstate (an ancestor), it wrongly decides the source is 'inside' the substate and skips the entry actions. Enter must instead ask whether the source is within the substate's own subtree — the descendant direction. Change it to else if (!Includes(transition.Source))."
+            }
+          ]
+        }
+      ],
+      "pipeline": {
+        "runnerStyle": "vstest",
+        "sourceFile": "src/Stateless/StateRepresentation.cs",
+        "buggyLine": "else if (!IsIncludedIn(transition.Source))",
+        "fixedLine": "else if (!Includes(transition.Source))",
+        "testProject": "test/Stateless.Tests/Stateless.Tests.csproj",
+        "targetFramework": "net9.0",
+        "sdkPin": "9.0.x (setup-dotnet)",
+        "extraTestArgs": "-c Release --filter \"FullyQualifiedName~StateRepresentationFixture.WhenTransitioningFromSubToSuperstate_SubstateEntryActionsExecuted\""
+      }
     }
   ]
 }

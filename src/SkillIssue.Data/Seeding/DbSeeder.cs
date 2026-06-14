@@ -29,7 +29,8 @@ public static class DbSeeder
             AutofacRepo(),
             NewtonsoftJsonRepo(),
             NodaTimeRepo(),
-            MoreLinqRepo()
+            MoreLinqRepo(),
+            StatelessRepo()
         );
         await db.SaveChangesAsync();
     }
@@ -285,6 +286,38 @@ public static class DbSeeder
                     new HintTier { Order = 1, Label = "Nudge",      Content = "AtLeast(n) should be true when the sequence has n or more elements — the boundary is inclusive. Right now a sequence of exactly n elements reports false: the 'or more' boundary has become 'strictly more'. AtMost, Exactly, and CountBetween are wrong at their boundaries too. What single comparison do all four operators share?" },
                     new HintTier { Order = 2, Label = "Area",       Content = "There is no AtLeast.cs — AtLeast, AtMost, Exactly, and CountBetween all live in MoreLinq/CountMethods.cs, and each delegates to a private helper, QuantityIterator(source, limit, min, max), which counts the elements and returns whether the count falls within [min, max]. The bug is in that one shared return expression, not in any individual operator." },
                     new HintTier { Order = 3, Label = "File & Line", Content = "In MoreLinq/CountMethods.cs, QuantityIterator ends with return count > min && count <= max; — the lower bound uses > instead of >=, so a count exactly equal to min (AtLeast(n) on n elements, or Exactly(n) on n) is rejected. Change it to return count >= min && count <= max;." }
+                ]
+            }
+        ]
+    };
+
+    // ── Stateless ─────────────────────────────────────────────────────────────
+
+    private static Repo StatelessRepo() => new()
+    {
+        Name        = "dotnet-state-machine/stateless",
+        GitHubUrl   = "https://github.com/handecodes/skillissue-stateless",
+        Language    = "C#",
+        Description = "Stateless — a hierarchical state machine library for .NET. Apache 2.0 licensed.",
+        IsActive    = true,
+        Bugs =
+        [
+            new Bug
+            {
+                Title      = "Entering a substate directly from its superstate skips the substate's OnEntry",
+                Brief      = "In a hierarchical state machine, transitioning from a parent (super)state straight into one of its child (sub)states should run the child's OnEntry action. Instead the child's OnEntry is silently skipped. Entering the same substate from an unrelated outside state works fine — only the transition down from the immediate superstate is wrong.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: dotnet-state-machine/stateless (Apache 2.0).",
+                ErrorMessage = "Assert.True() Failure\nExpected: True\nActual:   False\n  at Stateless.Tests.StateRepresentationFixture.WhenTransitioningFromSubToSuperstate_SubstateEntryActionsExecuted\nThe substate's OnEntry action did not run when the substate was entered from its superstate.",
+                ReproCommand = "dotnet test test/Stateless.Tests/Stateless.Tests.csproj -c Release -f net9.0 --filter \"FullyQualifiedName~StateRepresentationFixture.WhenTransitioningFromSubToSuperstate_SubstateEntryActionsExecuted\"",
+                Difficulty = Difficulty.Hard,
+                FailingTests =
+                [
+                    new FailingTest { Order = 1, TestName = "Stateless.Tests.StateRepresentationFixture.WhenTransitioningFromSubToSuperstate_SubstateEntryActionsExecuted" }
+                ],
+                Hints =
+                [
+                    new HintTier { Order = 1, Label = "Nudge",      Content = "Transitioning from a parent state straight into one of its child states never runs the child's OnEntry — yet entering that same child from an unrelated outside state works. The code that decides whether to run a state's entry actions is judging where the transition came from incorrectly: it thinks the source is already 'inside' the state being entered when it isn't." },
+                    new HintTier { Order = 2, Label = "Area",       Content = "Entry actions are executed by StateRepresentation.Enter, which skips a state's entry actions when the transition's source is already inside that state. The hierarchy is navigated by two deceptively similar helpers: Includes walks DOWN (is the argument this state or one of its descendants?), while IsIncludedIn walks UP (is the argument this state or one of its ancestors?). Look at which one Enter applies to transition.Source." },
+                    new HintTier { Order = 3, Label = "File & Line", Content = "In src/Stateless/StateRepresentation.cs, Enter guards entry execution with else if (!IsIncludedIn(transition.Source)). IsIncludedIn walks UP the hierarchy, so when you enter a substate whose source is its superstate (an ancestor), it wrongly decides the source is 'inside' the substate and skips the entry actions. Enter must instead ask whether the source is within the substate's own subtree — the descendant direction. Change it to else if (!Includes(transition.Source))." }
                 ]
             }
         ]
