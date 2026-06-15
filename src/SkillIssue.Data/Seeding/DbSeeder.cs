@@ -30,7 +30,8 @@ public static class DbSeeder
             NewtonsoftJsonRepo(),
             NodaTimeRepo(),
             MoreLinqRepo(),
-            StatelessRepo()
+            StatelessRepo(),
+            GlobRepo()
         );
         await db.SaveChangesAsync();
     }
@@ -318,6 +319,38 @@ public static class DbSeeder
                     new HintTier { Order = 1, Label = "Nudge",      Content = "Transitioning from a parent state straight into one of its child states never runs the child's OnEntry — yet entering that same child from an unrelated outside state works. The code that decides whether to run a state's entry actions is judging where the transition came from incorrectly: it thinks the source is already 'inside' the state being entered when it isn't." },
                     new HintTier { Order = 2, Label = "Area",       Content = "Entry actions are executed by StateRepresentation.Enter, which skips a state's entry actions when the transition's source is already inside that state. The hierarchy is navigated by two deceptively similar helpers: Includes walks DOWN (is the argument this state or one of its descendants?), while IsIncludedIn walks UP (is the argument this state or one of its ancestors?). Look at which one Enter applies to transition.Source." },
                     new HintTier { Order = 3, Label = "File & Line", Content = "In src/Stateless/StateRepresentation.cs, Enter guards entry execution with else if (!IsIncludedIn(transition.Source)). IsIncludedIn walks UP the hierarchy, so when you enter a substate whose source is its superstate (an ancestor), it wrongly decides the source is 'inside' the substate and skips the entry actions. Enter must instead ask whether the source is within the substate's own subtree — the descendant direction. Change it to else if (!Includes(transition.Source))." }
+                ]
+            }
+        ]
+    };
+
+    // ── GlobExpressions ───────────────────────────────────────────────────────
+
+    private static Repo GlobRepo() => new()
+    {
+        Name        = "kthompson/glob",
+        GitHubUrl   = "https://github.com/handecodes/skillissue-glob",
+        Language    = "C#",
+        Description = "GlobExpressions — a .NET library for matching file paths against glob patterns. MIT licensed.",
+        IsActive    = true,
+        Bugs =
+        [
+            new Bug
+            {
+                Title      = "A * wildcard matches at most a single character",
+                Brief      = "The * wildcard should match a whole path segment of any length, but it only matches names of zero or one character: the glob folder/*.txt matches folder/a.txt yet fails to match folder/bigfile.txt. Longer names slip through. Single-character and empty matches still work, which makes it easy to miss.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: kthompson/glob (MIT).",
+                ErrorMessage = "Assert.True() Failure\nExpected: True\nActual:   False\n  at GlobExpressions.Tests.GlobTests.CanMatchSingleFileOnExtension\nThe glob folder/*.txt failed to match folder/bigfile.txt because * matched only one character.",
+                ReproCommand = "dotnet test test/Glob.Tests/Glob.Tests.csproj -c Release -f net8.0 -p:CollectCoverage=false --filter \"FullyQualifiedName~GlobTests.CanMatchSingleFileOnExtension\"",
+                Difficulty = Difficulty.Medium,
+                FailingTests =
+                [
+                    new FailingTest { Order = 1, TestName = "GlobExpressions.Tests.GlobTests.CanMatchSingleFileOnExtension" }
+                ],
+                Hints =
+                [
+                    new HintTier { Order = 1, Label = "Nudge",      Content = "A * segment should match a path segment of any length, but it only matches names of zero or one character — folder/*.txt matches folder/a.txt yet fails on folder/bigfile.txt. The matcher consumes a single character for the *, then moves on, instead of letting * keep consuming. The bug is in how it 'moves on'." },
+                    new HintTier { Order = 2, Label = "Area",       Content = "Matching is performed by the recursive Matcher.MatchesSubSegment. For a * (StringWildcard) it tries two branches: match zero characters (advance past the *), or consume one more character and recurse. The 'consume one more' branch is what lets * absorb an arbitrary number of characters — but only if it recurses back into the SAME * rather than the next sub-segment." },
+                    new HintTier { Order = 3, Label = "File & Line", Content = "In src/Glob/Matcher.cs, the StringWildcard case's 'one or more' branch recurses with nextSegment, which advances past the * after a single character — so * can match at most one char. To let * keep consuming, it must re-enter the same wildcard: pass segmentIndex (the current *) instead of nextSegment." }
                 ]
             }
         ]

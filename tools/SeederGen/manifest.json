@@ -395,6 +395,50 @@
         "sdkPin": "9.0.x (setup-dotnet)",
         "extraTestArgs": "-c Release --filter \"FullyQualifiedName~StateRepresentationFixture.WhenTransitioningFromSubToSuperstate_SubstateEntryActionsExecuted\""
       }
+    },
+    {
+      "id": "Glob",
+      "name": "kthompson/glob",
+      "gitHubUrl": "https://github.com/handecodes/skillissue-glob",
+      "language": "C#",
+      "description": "GlobExpressions — a .NET library for matching file paths against glob patterns. MIT licensed.",
+      "isActive": true,
+      "bugs": [
+        {
+          "title": "A * wildcard matches at most a single character",
+          "brief": "The * wildcard should match a whole path segment of any length, but it only matches names of zero or one character: the glob folder/*.txt matches folder/a.txt yet fails to match folder/bigfile.txt. Longer names slip through. Single-character and empty matches still work, which makes it easy to miss.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: kthompson/glob (MIT).",
+          "errorMessage": "Assert.True() Failure\nExpected: True\nActual:   False\n  at GlobExpressions.Tests.GlobTests.CanMatchSingleFileOnExtension\nThe glob folder/*.txt failed to match folder/bigfile.txt because * matched only one character.",
+          "reproCommand": "dotnet test test/Glob.Tests/Glob.Tests.csproj -c Release -f net8.0 -p:CollectCoverage=false --filter \"FullyQualifiedName~GlobTests.CanMatchSingleFileOnExtension\"",
+          "difficulty": "Medium",
+          "failingTests": [
+            "GlobExpressions.Tests.GlobTests.CanMatchSingleFileOnExtension"
+          ],
+          "hints": [
+            {
+              "label": "Nudge",
+              "content": "A * segment should match a path segment of any length, but it only matches names of zero or one character — folder/*.txt matches folder/a.txt yet fails on folder/bigfile.txt. The matcher consumes a single character for the *, then moves on, instead of letting * keep consuming. The bug is in how it 'moves on'."
+            },
+            {
+              "label": "Area",
+              "content": "Matching is performed by the recursive Matcher.MatchesSubSegment. For a * (StringWildcard) it tries two branches: match zero characters (advance past the *), or consume one more character and recurse. The 'consume one more' branch is what lets * absorb an arbitrary number of characters — but only if it recurses back into the SAME * rather than the next sub-segment."
+            },
+            {
+              "label": "File & Line",
+              "content": "In src/Glob/Matcher.cs, the StringWildcard case's 'one or more' branch recurses with nextSegment, which advances past the * after a single character — so * can match at most one char. To let * keep consuming, it must re-enter the same wildcard: pass segmentIndex (the current *) instead of nextSegment."
+            }
+          ]
+        }
+      ],
+      "pipeline": {
+        "runnerStyle": "vstest",
+        "sourceFile": "src/Glob/Matcher.cs",
+        "buggyLine": "MatchesSubSegment(segments, nextSegment, -1, pathSegment, pathIndex + 1, caseSensitive)); // or one+",
+        "fixedLine": "MatchesSubSegment(segments, segmentIndex, -1, pathSegment, pathIndex + 1, caseSensitive)); // or one+",
+        "testProject": "test/Glob.Tests/Glob.Tests.csproj",
+        "targetFramework": "net8.0",
+        "sdkPin": "8.0.x (setup-dotnet); fetch-depth: 0 (Nerdbank.GitVersioning)",
+        "extraTestArgs": "-c Release -p:CollectCoverage=false --filter \"FullyQualifiedName~GlobTests.CanMatchSingleFileOnExtension\""
+      }
     }
   ]
 }
