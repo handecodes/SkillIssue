@@ -5,23 +5,10 @@ namespace SkillIssue.Data.Seeding;
 
 public static class DbSeeder
 {
-    // If this repo URL is already in the database the current challenge set has been seeded — skip.
-    private const string SeedMarkerUrl = "https://github.com/JamesNK/Newtonsoft.Json";
-
     public static async Task SeedAsync(AppDbContext db)
     {
-        if (await db.Repos.AnyAsync(r => r.GitHubUrl == SeedMarkerUrl))
-            return;
-
-        // Replace the old challenge set. Delete in FK dependency order so SQLite
-        // doesn't complain even when foreign_keys pragma is on.
-        await db.Database.ExecuteSqlRawAsync("DELETE FROM Attempts");
-        await db.Database.ExecuteSqlRawAsync("DELETE FROM HintTiers");
-        await db.Database.ExecuteSqlRawAsync("DELETE FROM FailingTests");
-        await db.Database.ExecuteSqlRawAsync("DELETE FROM Bugs");
-        await db.Database.ExecuteSqlRawAsync("DELETE FROM Repos");
-
-        db.Repos.AddRange(
+        var repos = new[]
+        {
             HumanizerRepo(),
             PollyRepo(),
             CastleCoreRepo(),
@@ -32,7 +19,29 @@ public static class DbSeeder
             MoreLinqRepo(),
             StatelessRepo(),
             GlobRepo()
-        );
+        };
+
+        // Idempotency guard: skip the (destructive) reseed when the database already holds exactly
+        // the current challenge set. Keyed off the whole expected set of repo URLs, not one
+        // hard-coded marker — a single repo's URL changing (as happened when challenge #4 was
+        // rebuilt onto a fork) must never silently disable the guard and trigger a reseed.
+        var expectedUrls = repos.Select(r => r.GitHubUrl).ToHashSet();
+        var existingUrls = (await db.Repos.Select(r => r.GitHubUrl).ToListAsync()).ToHashSet();
+        if (expectedUrls.SetEquals(existingUrls))
+            return;
+
+        // Replace the old challenge set. Delete in FK dependency order so SQLite
+        // doesn't complain even when foreign_keys pragma is on.
+        // NOTE: this is destructive — it wipes Attempts (user progress). Safe only while there is
+        // no persistent volume (ephemeral DB per ADR-002). Must become idempotent/non-destructive
+        // before persistence is added — see ADR-007.
+        await db.Database.ExecuteSqlRawAsync("DELETE FROM Attempts");
+        await db.Database.ExecuteSqlRawAsync("DELETE FROM HintTiers");
+        await db.Database.ExecuteSqlRawAsync("DELETE FROM FailingTests");
+        await db.Database.ExecuteSqlRawAsync("DELETE FROM Bugs");
+        await db.Database.ExecuteSqlRawAsync("DELETE FROM Repos");
+
+        db.Repos.AddRange(repos);
         await db.SaveChangesAsync();
     }
 
