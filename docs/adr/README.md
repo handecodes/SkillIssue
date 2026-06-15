@@ -9,3 +9,4 @@ Decisions made during the design and build of Skill Issue, with context and acce
 | [ADR-003](ADR-003.md) | Real mined bugs over generated challenges | Accepted |
 | [ADR-004](ADR-004.md) | Users work in their own IDE | Accepted |
 | [ADR-005](ADR-005.md) | GitHub OAuth as the only authentication method | Accepted |
+| [ADR-006](ADR-006.md) | Fork verification trusts the fork's own CI (self-reported) | Accepted |
