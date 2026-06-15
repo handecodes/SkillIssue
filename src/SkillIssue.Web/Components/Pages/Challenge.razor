@@ -327,6 +327,7 @@ else
         var state = await AuthState;
         var userId = state.User.GetUserId();
         if (userId is null) { Nav.NavigateTo("/login", forceLoad: true); return; }
+        var gitHubId = state.User.GetGitHubId();
 
         if (!ForkLimiter.TryAcquire(userId.Value))
         {
@@ -347,7 +348,7 @@ else
 
         try
         {
-            verificationResult = await VerificationService.VerifyForkAsync(forkUrl, bug.Repo.GitHubUrl);
+            verificationResult = await VerificationService.VerifyForkAsync(forkUrl, bug.Repo.GitHubUrl, gitHubId);
             var elapsed = (int)(DateTime.UtcNow - _startedAt).TotalSeconds;
             await AttemptService.RecordAttemptAsync(
                 userId.Value, bug.Id, forkUrl,

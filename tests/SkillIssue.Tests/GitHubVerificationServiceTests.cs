@@ -7,13 +7,16 @@ namespace SkillIssue.Tests;
 public class GitHubVerificationServiceTests
 {
     private const string UpstreamUrl = "https://github.com/expected/repo";
+    // GitHub numeric owner ID the "signed-in user" owns; ValidForkInfoJson reports the same by default.
+    private const string OwnerGitHubId = "424242";
 
     // Fork-info JSON helpers
-    private static string ValidForkInfoJson(string parentUrl = UpstreamUrl, string defaultBranch = "main") =>
+    private static string ValidForkInfoJson(string parentUrl = UpstreamUrl, string defaultBranch = "main", long ownerId = 424242) =>
         JsonSerializer.Serialize(new
         {
             fork = true,
             default_branch = defaultBranch,
+            owner = new { id = ownerId },
             parent = new { html_url = parentUrl, full_name = parentUrl.Split('/')[^1] }
         });
 
@@ -31,7 +34,7 @@ public class GitHubVerificationServiceTests
     {
         var sut = BuildService((HttpStatusCode.OK, "{}"));
 
-        var result = await sut.VerifyForkAsync(url, UpstreamUrl);
+        var result = await sut.VerifyForkAsync(url, UpstreamUrl, OwnerGitHubId);
 
         Assert.False(result.Passed);
         Assert.Contains("Invalid", result.Message);
@@ -44,7 +47,7 @@ public class GitHubVerificationServiceTests
     {
         var sut = BuildService((HttpStatusCode.NotFound, "{}"));
 
-        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl);
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
 
         Assert.False(result.Passed);
         Assert.Contains("not found", result.Message, StringComparison.OrdinalIgnoreCase);
@@ -58,7 +61,7 @@ public class GitHubVerificationServiceTests
     {
         var sut = BuildService((statusCode, "{}"));
 
-        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl);
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
 
         Assert.False(result.Passed);
         Assert.Contains(((int)statusCode).ToString(), result.Message);
@@ -69,7 +72,7 @@ public class GitHubVerificationServiceTests
     {
         var sut = BuildService((HttpStatusCode.OK, "not json at all {{{"));
 
-        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl);
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
 
         Assert.False(result.Passed);
     }
@@ -81,7 +84,7 @@ public class GitHubVerificationServiceTests
     {
         var sut = BuildService((HttpStatusCode.OK, NotAForkInfoJson()));
 
-        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl);
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
 
         Assert.False(result.Passed);
         Assert.Contains("not a fork", result.Message, StringComparison.OrdinalIgnoreCase);
@@ -92,7 +95,7 @@ public class GitHubVerificationServiceTests
     {
         var sut = BuildService((HttpStatusCode.OK, ValidForkInfoJson("https://github.com/different/repo")));
 
-        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl);
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
 
         Assert.False(result.Passed);
         Assert.Contains("expected challenge repo", result.Message, StringComparison.OrdinalIgnoreCase);
@@ -114,7 +117,7 @@ public class GitHubVerificationServiceTests
             (HttpStatusCode.OK, ValidForkInfoJson("https://github.com/expected/repo")),
             (HttpStatusCode.OK, body));
 
-        var result = await sut.VerifyForkAsync("https://github.com/owner/fork", upstreamVariant);
+        var result = await sut.VerifyForkAsync("https://github.com/owner/fork", upstreamVariant, OwnerGitHubId);
 
         Assert.True(result.Passed);
     }
@@ -132,7 +135,7 @@ public class GitHubVerificationServiceTests
             (HttpStatusCode.OK, ValidForkInfoJson()),
             (HttpStatusCode.OK, runsBody));
 
-        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl);
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
 
         Assert.True(result.Passed);
         Assert.Equal("abc1234567890", result.CommitSha);
@@ -149,7 +152,7 @@ public class GitHubVerificationServiceTests
             (HttpStatusCode.OK, ValidForkInfoJson()),
             (HttpStatusCode.OK, runsBody));
 
-        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl);
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
 
         Assert.False(result.Passed);
         Assert.Contains("failure", result.Message, StringComparison.OrdinalIgnoreCase);
@@ -172,7 +175,7 @@ public class GitHubVerificationServiceTests
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.github.com/") };
         var sut = new GitHubVerificationService(client);
 
-        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl);
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
 
         Assert.True(result.Passed);
         var step2Url = handler.Requests[1].RequestUri!.ToString();
@@ -189,7 +192,7 @@ public class GitHubVerificationServiceTests
             (HttpStatusCode.OK, ValidForkInfoJson()),
             (HttpStatusCode.OK, runsBody));
 
-        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl);
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
 
         Assert.False(result.Passed);
         Assert.Contains("No completed challenge workflow runs", result.Message);
@@ -211,7 +214,7 @@ public class GitHubVerificationServiceTests
             (HttpStatusCode.OK, ValidForkInfoJson()),
             (HttpStatusCode.OK, runsBody));
 
-        var result = await sut.VerifyForkAsync(url, UpstreamUrl);
+        var result = await sut.VerifyForkAsync(url, UpstreamUrl, OwnerGitHubId);
 
         Assert.True(result.Passed);
     }
@@ -225,7 +228,7 @@ public class GitHubVerificationServiceTests
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.github.com/") };
         var sut = new GitHubVerificationService(client);
 
-        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl);
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
 
         Assert.False(result.Passed);
         Assert.Contains("Network error", result.Message);
@@ -238,7 +241,7 @@ public class GitHubVerificationServiceTests
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.github.com/") };
         var sut = new GitHubVerificationService(client);
 
-        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl);
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
 
         Assert.False(result.Passed);
         Assert.Contains("timed out", result.Message, StringComparison.OrdinalIgnoreCase);
@@ -254,7 +257,7 @@ public class GitHubVerificationServiceTests
         var sut = BuildServiceWithResponse(HttpStatusCode.Forbidden, "{}",
             ("X-RateLimit-Remaining", "0"));
 
-        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl);
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
 
         Assert.False(result.Passed);
         Assert.Contains("rate-limited on our side", result.Message);
@@ -269,7 +272,7 @@ public class GitHubVerificationServiceTests
         // rate limiting — it falls through to the generic message.
         var sut = BuildServiceWithResponse(HttpStatusCode.Forbidden, "{}");
 
-        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl);
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
 
         Assert.False(result.Passed);
         Assert.Contains("GitHub API returned 403", result.Message);
@@ -284,11 +287,80 @@ public class GitHubVerificationServiceTests
             ("X-RateLimit-Remaining", "0"),
             ("X-RateLimit-Reset", resetUnix));
 
-        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl);
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
 
         Assert.False(result.Passed);
         Assert.Contains("rate-limited on our side", result.Message);
         Assert.Contains("minute(s)", result.Message);
+    }
+
+    // -- Fork ownership (must belong to the signed-in user) ------------------
+
+    [Fact]
+    public async Task VerifyForkAsync_Proceeds_WhenForkOwnerMatchesUser()
+    {
+        // Owner id reported by GitHub matches the caller's id → ownership gate passes and a green
+        // run is a PASS.
+        var runsBody = JsonSerializer.Serialize(new
+        {
+            workflow_runs = new[] { new { conclusion = "success", head_sha = "abc123" } }
+        });
+        var sut = BuildService(
+            (HttpStatusCode.OK, ValidForkInfoJson(ownerId: 424242)),
+            (HttpStatusCode.OK, runsBody));
+
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, "424242");
+
+        Assert.True(result.Passed);
+    }
+
+    [Fact]
+    public async Task VerifyForkAsync_Rejects_WhenForkOwnedByDifferentUser()
+    {
+        // Valid fork of the right parent with a GREEN run, but owned by someone else. Must be
+        // rejected at the ownership gate — the green run is never trusted. (Owner is compared by
+        // GitHub numeric id from the API, not the URL slug.)
+        var runsBody = JsonSerializer.Serialize(new
+        {
+            workflow_runs = new[] { new { conclusion = "success", head_sha = "abc123" } }
+        });
+        var sut = BuildService(
+            (HttpStatusCode.OK, ValidForkInfoJson(ownerId: 999999)),
+            (HttpStatusCode.OK, runsBody));
+
+        var result = await sut.VerifyForkAsync("https://github.com/someoneelse/repo", UpstreamUrl, "424242");
+
+        Assert.False(result.Passed);
+        Assert.Contains("isn't owned by your GitHub account", result.Message);
+    }
+
+    [Fact]
+    public async Task VerifyForkAsync_DoesNotThrow_WhenForkUrlIsNull()
+    {
+        // Null-guard: a null fork URL must return the invalid-URL message, not throw an NRE.
+        var sut = BuildService((HttpStatusCode.OK, "{}"));
+
+        var result = await sut.VerifyForkAsync(null!, UpstreamUrl, OwnerGitHubId);
+
+        Assert.False(result.Passed);
+        Assert.Contains("Invalid", result.Message);
+    }
+
+    [Fact]
+    public async Task VerifyForkAsync_ReturnsWorkflowMissingMessage_WhenRunsEndpoint404()
+    {
+        // 404 on the workflow-runs endpoint = challenge.yml deleted/renamed — distinct from a
+        // transient API error, so the message must not say "try again shortly".
+        var sut = BuildService(
+            (HttpStatusCode.OK, ValidForkInfoJson()),
+            (HttpStatusCode.NotFound, "{}"));
+
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
+
+        Assert.False(result.Passed);
+        Assert.Contains("challenge.yml", result.Message);
+        Assert.Contains("wasn't found", result.Message);
+        Assert.DoesNotContain("Try again shortly", result.Message);
     }
 
     // -- Helpers -------------------------------------------------------------

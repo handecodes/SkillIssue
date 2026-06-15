@@ -12,8 +12,11 @@ public partial class GitHubVerificationService(HttpClient httpClient) : IGitHubV
     [GeneratedRegex(@"^https://github\.com/([^/]+)/([^/?\s]+?)(?:\.git)?/?$")]
     private static partial Regex ForkUrlRegex();
 
-    public async Task<VerificationResult> VerifyForkAsync(string forkUrl, string upstreamUrl)
+    public async Task<VerificationResult> VerifyForkAsync(string forkUrl, string upstreamUrl, string? expectedOwnerGitHubId)
     {
+        if (string.IsNullOrWhiteSpace(forkUrl))
+            return new VerificationResult(false, null, "Invalid GitHub repository URL. Expected format: https://github.com/owner/repo");
+
         var match = ForkUrlRegex().Match(forkUrl.Trim());
         if (!match.Success)
             return new VerificationResult(false, null, "Invalid GitHub repository URL. Expected format: https://github.com/owner/repo");
@@ -46,6 +49,14 @@ public partial class GitHubVerificationService(HttpClient httpClient) : IGitHubV
                 return new VerificationResult(false, null,
                     $"This fork's parent is '{repoData.Parent?.FullName}', not the expected challenge repo. Make sure you forked the right repository.");
 
+            // The fork must belong to the signed-in user. Compare GitHub numeric owner IDs (not
+            // logins, which can be renamed). Fail closed if we don't have the caller's ID, so a
+            // missing identity can never be treated as a match.
+            var ownerId = repoData.Owner?.Id.ToString();
+            if (string.IsNullOrEmpty(expectedOwnerGitHubId) || ownerId != expectedOwnerGitHubId)
+                return new VerificationResult(false, null,
+                    "This fork isn't owned by your GitHub account — verify a fork you own.");
+
             // Step 2: check the latest completed run of OUR challenge workflow on the fork's
             // default branch. Scoping to challenge.yml + the default branch is required: a fork
             // inherits the upstream's own workflows, which fire on the same push and often fail
@@ -57,6 +68,12 @@ public partial class GitHubVerificationService(HttpClient httpClient) : IGitHubV
 
             if (IsRateLimited(runsResponse))
                 return new VerificationResult(false, null, RateLimitMessage(runsResponse));
+
+            // A 404 here means the challenge workflow file itself is missing — distinct from a
+            // transient API hiccup. Tell the student not to delete/rename it rather than "try again".
+            if (runsResponse.StatusCode == HttpStatusCode.NotFound)
+                return new VerificationResult(false, null,
+                    "The challenge workflow (.github/workflows/challenge.yml) wasn't found on your fork's default branch. Don't rename or delete it — re-fork the challenge if needed.");
 
             if (!runsResponse.IsSuccessStatusCode)
                 return new VerificationResult(false, null, $"GitHub API returned {(int)runsResponse.StatusCode}. Try again shortly.");
@@ -131,8 +148,17 @@ public partial class GitHubVerificationService(HttpClient httpClient) : IGitHubV
         [JsonPropertyName("default_branch")]
         public string DefaultBranch { get; set; } = "";
 
+        [JsonPropertyName("owner")]
+        public OwnerInfo? Owner { get; set; }
+
         [JsonPropertyName("parent")]
         public ParentInfo? Parent { get; set; }
+    }
+
+    private sealed class OwnerInfo
+    {
+        [JsonPropertyName("id")]
+        public long Id { get; set; }
     }
 
     private sealed class ParentInfo

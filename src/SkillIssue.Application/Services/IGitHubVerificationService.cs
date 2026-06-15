@@ -4,5 +4,5 @@ namespace SkillIssue.Application.Services;
 
 public interface IGitHubVerificationService
 {
-    Task<VerificationResult> VerifyForkAsync(string forkUrl, string upstreamUrl);
+    Task<VerificationResult> VerifyForkAsync(string forkUrl, string upstreamUrl, string? expectedOwnerGitHubId);
 }
