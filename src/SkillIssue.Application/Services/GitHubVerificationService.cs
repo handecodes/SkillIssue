@@ -29,6 +29,9 @@ public partial class GitHubVerificationService(HttpClient httpClient) : IGitHubV
             if (repoResponse.StatusCode == HttpStatusCode.NotFound)
                 return new VerificationResult(false, null, "Repository not found. Make sure it's public and the URL is correct.");
 
+            if (IsRateLimited(repoResponse))
+                return new VerificationResult(false, null, RateLimitMessage(repoResponse));
+
             if (!repoResponse.IsSuccessStatusCode)
                 return new VerificationResult(false, null, $"GitHub API returned {(int)repoResponse.StatusCode}. Try again shortly.");
 
@@ -51,6 +54,9 @@ public partial class GitHubVerificationService(HttpClient httpClient) : IGitHubV
             var branch = Uri.EscapeDataString(repoData.DefaultBranch);
             var runsResponse = await httpClient.GetAsync(
                 $"repos/{owner}/{repo}/actions/workflows/challenge.yml/runs?per_page=10&status=completed&branch={branch}");
+
+            if (IsRateLimited(runsResponse))
+                return new VerificationResult(false, null, RateLimitMessage(runsResponse));
 
             if (!runsResponse.IsSuccessStatusCode)
                 return new VerificationResult(false, null, $"GitHub API returned {(int)runsResponse.StatusCode}. Try again shortly.");
@@ -88,6 +94,33 @@ public partial class GitHubVerificationService(HttpClient httpClient) : IGitHubV
         if (url.EndsWith(".git", StringComparison.OrdinalIgnoreCase))
             url = url[..^4];
         return url.ToLowerInvariant();
+    }
+
+    // GitHub signals rate limiting with 403 (or 429) and X-RateLimit-Remaining: 0.
+    // Distinguish this from a real 403 so the user isn't told their fix is wrong.
+    private static bool IsRateLimited(HttpResponseMessage response)
+    {
+        if (response.StatusCode != HttpStatusCode.Forbidden &&
+            response.StatusCode != HttpStatusCode.TooManyRequests)
+            return false;
+
+        return response.Headers.TryGetValues("X-RateLimit-Remaining", out var values)
+            && values.FirstOrDefault() == "0";
+    }
+
+    private static string RateLimitMessage(HttpResponseMessage response)
+    {
+        var wait = "";
+        if (response.Headers.TryGetValues("X-RateLimit-Reset", out var values)
+            && long.TryParse(values.FirstOrDefault(), out var resetUnix))
+        {
+            var remaining = DateTimeOffset.FromUnixTimeSeconds(resetUnix) - DateTimeOffset.UtcNow;
+            if (remaining > TimeSpan.Zero)
+                wait = $" (about {Math.Ceiling(remaining.TotalMinutes)} minute(s))";
+        }
+
+        return "Verification is temporarily rate-limited on our side — this isn't a problem with your fix. "
+             + $"Try again in a few minutes{wait}.";
     }
 
     private sealed class RepoInfoResponse

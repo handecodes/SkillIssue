@@ -244,6 +244,53 @@ public class GitHubVerificationServiceTests
         Assert.Contains("timed out", result.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    // -- Rate limiting (403/429 + X-RateLimit-Remaining: 0) ------------------
+
+    [Fact]
+    public async Task VerifyForkAsync_ReturnsRateLimitMessage_When403WithRemainingZero()
+    {
+        // 403 with X-RateLimit-Remaining: 0 is GitHub's rate-limit signal — the user must be told
+        // it's server-side, not a problem with their fix.
+        var sut = BuildServiceWithResponse(HttpStatusCode.Forbidden, "{}",
+            ("X-RateLimit-Remaining", "0"));
+
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl);
+
+        Assert.False(result.Passed);
+        Assert.Contains("rate-limited on our side", result.Message);
+        Assert.Contains("isn't a problem with your fix", result.Message);
+        Assert.DoesNotContain("GitHub API returned 403", result.Message);
+    }
+
+    [Fact]
+    public async Task VerifyForkAsync_ReturnsGenericMessage_When403WithoutRateLimitHeader()
+    {
+        // The discrimination test: a real 403 (no rate-limit header) must NOT be mislabeled as
+        // rate limiting — it falls through to the generic message.
+        var sut = BuildServiceWithResponse(HttpStatusCode.Forbidden, "{}");
+
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl);
+
+        Assert.False(result.Passed);
+        Assert.Contains("GitHub API returned 403", result.Message);
+        Assert.DoesNotContain("rate-limited", result.Message);
+    }
+
+    [Fact]
+    public async Task VerifyForkAsync_RateLimitMessageIncludesWait_WhenResetHeaderPresent()
+    {
+        var resetUnix = DateTimeOffset.UtcNow.AddMinutes(10).ToUnixTimeSeconds().ToString();
+        var sut = BuildServiceWithResponse(HttpStatusCode.Forbidden, "{}",
+            ("X-RateLimit-Remaining", "0"),
+            ("X-RateLimit-Reset", resetUnix));
+
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl);
+
+        Assert.False(result.Passed);
+        Assert.Contains("rate-limited on our side", result.Message);
+        Assert.Contains("minute(s)", result.Message);
+    }
+
     // -- Helpers -------------------------------------------------------------
 
     private static GitHubVerificationService BuildService(
@@ -255,6 +302,31 @@ public class GitHubVerificationServiceTests
             : new SequencedHttpHandler(first, second.Value);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.github.com/") };
         return new GitHubVerificationService(client);
+    }
+
+    // Builds a service whose first (and every) GitHub response carries the given status, body,
+    // and response headers — needed to simulate rate-limit headers, which the other handlers omit.
+    private static GitHubVerificationService BuildServiceWithResponse(
+        HttpStatusCode status, string body, params (string name, string value)[] headers)
+    {
+        var handler = new HeaderedHttpHandler(status, body, headers);
+        var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.github.com/") };
+        return new GitHubVerificationService(client);
+    }
+
+    private sealed class HeaderedHttpHandler(
+        HttpStatusCode status, string body, params (string name, string value)[] headers) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            var response = new HttpResponseMessage(status)
+            {
+                Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json")
+            };
+            foreach (var (name, value) in headers)
+                response.Headers.TryAddWithoutValidation(name, value);
+            return Task.FromResult(response);
+        }
     }
 
     private sealed class SequencedHttpHandler(params (HttpStatusCode status, string body)[] responses) : HttpMessageHandler

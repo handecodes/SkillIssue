@@ -21,6 +21,21 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
     ?? "Data Source=skillissue.db";
 
 var githubPat = builder.Configuration["GitHub:PatToken"];
+if (string.IsNullOrWhiteSpace(githubPat))
+{
+    // Without a PAT the verifier falls back to anonymous GitHub calls — 60 req/hour shared by
+    // server IP, which silently breaks verification under any real load. Fail fast in prod;
+    // allow local dev to run without one but make the degraded mode impossible to miss.
+    if (builder.Environment.IsProduction())
+        throw new InvalidOperationException(
+            "GitHub:PatToken is not configured. The fork verifier requires an authenticated GitHub token in Production " +
+            "(anonymous calls are limited to 60/hour shared by server IP). Set it in Azure app settings: GitHub:PatToken.");
+
+    Console.Error.WriteLine(
+        "WARNING: GitHub:PatToken is not configured — fork verification will use ANONYMOUS GitHub API calls " +
+        "(60 req/hour, shared by IP). Set it via user-secrets for authenticated 5000/hour: " +
+        "dotnet user-secrets set \"GitHub:PatToken\" \"<value>\"");
+}
 
 builder.Services
     .AddDataServices(connectionString)
