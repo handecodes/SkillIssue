@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using SkillIssue.Application;
+using SkillIssue.Application.Security;
 using SkillIssue.Application.Services;
 using SkillIssue.Data;
 using SkillIssue.Data.Seeding;
@@ -152,11 +153,10 @@ app.UseAntiforgery();
 // Auth endpoints — handled via regular HTTP, not Blazor
 app.MapGet("/login", (string? returnUrl) =>
 {
-    // Reject non-local return URLs to prevent open redirect attacks.
-    if (returnUrl is not null && !Uri.TryCreate(returnUrl, UriKind.Relative, out _))
-        returnUrl = "/";
+    // Reject non-local return URLs (absolute or protocol-relative) to prevent open redirects.
+    var safeReturnUrl = ReturnUrlValidator.Sanitize(returnUrl);
     return Results.Challenge(
-        new AuthenticationProperties { RedirectUri = returnUrl ?? "/" },
+        new AuthenticationProperties { RedirectUri = safeReturnUrl },
         [GitHubAuthenticationDefaults.AuthenticationScheme]);
 }).RequireRateLimiting("login");
 
