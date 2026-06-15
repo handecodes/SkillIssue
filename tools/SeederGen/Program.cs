@@ -2,9 +2,14 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+// Expose the gate (Verify) and manifest loader to the test project so the drift-detection
+// logic itself is unit-tested, not only exercised by the seeder-gate CI workflow.
+[assembly: InternalsVisibleTo("SkillIssue.Tests")]
 
 namespace SeederGen;
 
@@ -84,7 +89,7 @@ internal static class Program
         };
     }
 
-    private static Manifest Load(string path) =>
+    internal static Manifest Load(string path) =>
         JsonSerializer.Deserialize<Manifest>(File.ReadAllText(path), ReadOpts)
         ?? throw new InvalidOperationException("Manifest failed to parse.");
 
@@ -168,7 +173,7 @@ internal static class Program
     }
 
     // ── verify: generated rows must reproduce the current hand-written rows ──
-    private static int Verify(Manifest manifest, string seederPath, string outDir)
+    internal static int Verify(Manifest manifest, string seederPath, string outDir)
     {
         Directory.CreateDirectory(outDir);
         var seederRoot = CSharpSyntaxTree.ParseText(File.ReadAllText(seederPath)).GetRoot();

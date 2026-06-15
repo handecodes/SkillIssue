@@ -22,6 +22,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\SkillIssue.Application\SkillIssue.Application.csproj" />
     <ProjectReference Include="..\..\src\SkillIssue.Domain\SkillIssue.Domain.csproj" />
+    <!-- Standalone authoring tool, referenced only so the seeder gate's own drift-detection
+         logic can be unit-tested in-process (see SeederGateTests). -->
+    <ProjectReference Include="..\..\tools\SeederGen\SeederGen.csproj" />
   </ItemGroup>
 
 </Project>

@@ -363,6 +363,156 @@ public class GitHubVerificationServiceTests
         Assert.DoesNotContain("Try again shortly", result.Message);
     }
 
+    // -- Rate-limit failure branches ----------------------------------------
+
+    [Fact]
+    public async Task VerifyForkAsync_ReturnsRateLimitMessage_On429WithRemainingZero()
+    {
+        // 429 Too Many Requests (not just 403) with Remaining: 0 is also a rate-limit signal.
+        var sut = BuildServiceWithResponse(HttpStatusCode.TooManyRequests, "{}",
+            ("X-RateLimit-Remaining", "0"));
+
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
+
+        Assert.False(result.Passed);
+        Assert.Contains("rate-limited on our side", result.Message);
+    }
+
+    [Fact]
+    public async Task VerifyForkAsync_ReturnsRateLimitMessage_WhenRunsEndpointIsRateLimited()
+    {
+        // Step 1 (repo info) succeeds for an owned fork; Step 2 (workflow runs) is rate-limited.
+        var sut = BuildServiceSeq(
+            (HttpStatusCode.OK, ValidForkInfoJson(), []),
+            (HttpStatusCode.Forbidden, "{}", [("X-RateLimit-Remaining", "0")]));
+
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
+
+        Assert.False(result.Passed);
+        Assert.Contains("rate-limited on our side", result.Message);
+    }
+
+    [Fact]
+    public async Task VerifyForkAsync_RateLimitMessageOmitsWait_WhenResetIsInThePast()
+    {
+        // Reset time already elapsed → no "(about N minute(s))" suffix, just the base message.
+        var pastReset = DateTimeOffset.UtcNow.AddMinutes(-5).ToUnixTimeSeconds().ToString();
+        var sut = BuildServiceWithResponse(HttpStatusCode.Forbidden, "{}",
+            ("X-RateLimit-Remaining", "0"), ("X-RateLimit-Reset", pastReset));
+
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
+
+        Assert.False(result.Passed);
+        Assert.Contains("rate-limited on our side", result.Message);
+        Assert.DoesNotContain("minute(s)", result.Message);
+    }
+
+    [Fact]
+    public async Task VerifyForkAsync_ReportsUnknownConclusion_WhenLatestRunConclusionIsNull()
+    {
+        // A completed run with a null conclusion → not a pass, and the message says "unknown".
+        var runsBody = JsonSerializer.Serialize(new
+        {
+            workflow_runs = new[] { new { conclusion = (string?)null, head_sha = "abc123" } }
+        });
+        var sut = BuildService(
+            (HttpStatusCode.OK, ValidForkInfoJson()),
+            (HttpStatusCode.OK, runsBody));
+
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
+
+        Assert.False(result.Passed);
+        Assert.Contains("unknown", result.Message);
+    }
+
+    // -- Defensive / fail-closed guard branches -----------------------------
+
+    [Fact]
+    public async Task VerifyForkAsync_Rejects_WhenOwnerMissingFromResponse()
+    {
+        // No "owner" in the repo payload → owner id is null → can't match → reject (fail closed).
+        var forkInfo = JsonSerializer.Serialize(new
+        {
+            fork = true,
+            default_branch = "main",
+            parent = new { html_url = UpstreamUrl, full_name = "expected/repo" }
+        });
+        var sut = BuildService((HttpStatusCode.OK, forkInfo));
+
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
+
+        Assert.False(result.Passed);
+        Assert.Contains("isn't owned by your GitHub account", result.Message);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    public async Task VerifyForkAsync_FailsClosed_WhenCallerGitHubIdMissing(string? callerId)
+    {
+        // Security-critical: a valid, correctly-parented fork with a GREEN run must still be
+        // REJECTED when we don't have the caller's GitHub id — the ownership check fails closed,
+        // never open.
+        var runsBody = JsonSerializer.Serialize(new
+        {
+            workflow_runs = new[] { new { conclusion = "success", head_sha = "abc123" } }
+        });
+        var sut = BuildService(
+            (HttpStatusCode.OK, ValidForkInfoJson()),
+            (HttpStatusCode.OK, runsBody));
+
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, callerId);
+
+        Assert.False(result.Passed);
+        Assert.Contains("isn't owned by your GitHub account", result.Message);
+    }
+
+    [Fact]
+    public async Task VerifyForkAsync_HandlesNullParent_Gracefully()
+    {
+        // fork:true but no "parent" → Parent?.HtmlUrl ?? "" path → fails the parent check cleanly.
+        var forkInfo = JsonSerializer.Serialize(new
+        {
+            fork = true,
+            default_branch = "main",
+            owner = new { id = 424242 }
+        });
+        var sut = BuildService((HttpStatusCode.OK, forkInfo));
+
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
+
+        Assert.False(result.Passed);
+        Assert.Contains("not the expected challenge repo", result.Message);
+    }
+
+    [Fact]
+    public async Task VerifyForkAsync_RateLimitMessageOmitsWait_WhenResetIsNonNumeric()
+    {
+        // A malformed X-RateLimit-Reset must not crash — just omit the wait estimate.
+        var sut = BuildServiceWithResponse(HttpStatusCode.Forbidden, "{}",
+            ("X-RateLimit-Remaining", "0"), ("X-RateLimit-Reset", "not-a-number"));
+
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
+
+        Assert.False(result.Passed);
+        Assert.Contains("rate-limited on our side", result.Message);
+        Assert.DoesNotContain("minute(s)", result.Message);
+    }
+
+    [Fact]
+    public async Task VerifyForkAsync_HandlesNullRunsPayload_Gracefully()
+    {
+        // Runs endpoint returns literal null → data is null → no crash → "no runs" message.
+        var sut = BuildService(
+            (HttpStatusCode.OK, ValidForkInfoJson()),
+            (HttpStatusCode.OK, "null"));
+
+        var result = await sut.VerifyForkAsync("https://github.com/owner/repo", UpstreamUrl, OwnerGitHubId);
+
+        Assert.False(result.Passed);
+        Assert.Contains("No completed challenge workflow runs", result.Message);
+    }
+
     // -- Helpers -------------------------------------------------------------
 
     private static GitHubVerificationService BuildService(
@@ -391,6 +541,34 @@ public class GitHubVerificationServiceTests
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
+            var response = new HttpResponseMessage(status)
+            {
+                Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json")
+            };
+            foreach (var (name, value) in headers)
+                response.Headers.TryAddWithoutValidation(name, value);
+            return Task.FromResult(response);
+        }
+    }
+
+    // Returns a sequence of responses, each able to carry its own headers — needed to simulate a
+    // rate-limited SECOND call (workflow-runs endpoint) after a successful first call.
+    private static GitHubVerificationService BuildServiceSeq(
+        params (HttpStatusCode status, string body, (string name, string value)[] headers)[] responses)
+    {
+        var handler = new SequencedHeaderedHttpHandler(responses);
+        var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.github.com/") };
+        return new GitHubVerificationService(client);
+    }
+
+    private sealed class SequencedHeaderedHttpHandler(
+        params (HttpStatusCode status, string body, (string name, string value)[] headers)[] responses) : HttpMessageHandler
+    {
+        private int _index;
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            var (status, body, headers) = responses[Math.Min(_index++, responses.Length - 1)];
             var response = new HttpResponseMessage(status)
             {
                 Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json")
