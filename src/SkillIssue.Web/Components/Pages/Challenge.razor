@@ -267,6 +267,7 @@ else
 
     private Bug? bug;
     private bool _loaded;
+    private int? _loadedBugId;   // which BugId is currently loaded; guards against redundant reloads
     private int revealedCount;
     private string forkUrl = "";
     private bool isSubmitting;
@@ -306,10 +307,30 @@ else
         await target.FocusAsync();
     }
 
-    protected override async Task OnInitializedAsync()
+    // Loads in OnParametersSetAsync (not OnInitializedAsync) so navigating between challenges —
+    // which reuses this same component instance and only changes the BugId parameter — reloads
+    // the data. The id-guard avoids redundant refetches when parameters are set for other reasons.
+    protected override async Task OnParametersSetAsync()
     {
+        if (_loadedBugId == BugId)
+            return;
+
+        // New challenge (first load or navigation): clear ALL per-challenge state so nothing from
+        // the previous challenge bleeds in — a stale fork URL or a leftover "PASS!" would be worse
+        // than the navigation bug itself. Reset before the await so the Loading state shows instead
+        // of flashing the old challenge's content.
+        _loaded = false;
+        bug = null;
+        revealedCount = 0;
+        forkUrl = "";
+        verificationResult = null;
+        submitError = null;
+        isSubmitting = false;
+        _lastSubmit = DateTime.MinValue;
+
         bug = await ChallengeService.GetBugWithHintsAsync(BugId);
         _startedAt = DateTime.UtcNow;
+        _loadedBugId = BugId;
         _loaded = true;
     }
 
