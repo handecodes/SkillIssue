@@ -77,7 +77,7 @@ else
 
     <section class="challenge-section" aria-labelledby="section-hints">
         <h2 class="sec-label" id="section-hints">Hints</h2>
-        <p class="hint-tally">@revealedCount / @bug.Hints.Count revealed &mdash; fewer hints used = cleaner result</p>
+        <p class="hint-tally">@revealedCount / @bug.Hints.Count revealed, fewer hints used = cleaner result</p>
 
         @foreach (var hint in bug.Hints.OrderBy(h => h.Order).Take(revealedCount))
         {
@@ -172,7 +172,7 @@ else
                             <span>
                                 On your new fork, open the <strong style="color: var(--t1);">Actions</strong> tab and enable workflows
                                 (&ldquo;<strong style="color: var(--t1);">I understand my workflows, go ahead and enable them</strong>&rdquo;).
-                                GitHub disables Actions on forks by default &mdash; until you do this, your pushed fix runs no CI and
+                                GitHub disables Actions on forks by default. Until you do this, your pushed fix runs no CI and
                                 the check below stays stuck on &ldquo;no completed workflow runs.&rdquo;
                             </span>
                         </li>
@@ -196,7 +196,7 @@ else
                         </li>
                         <li>
                             <span class="step-n" aria-hidden="true">05</span>
-                            <span>Paste your fork URL below &mdash; the CI run is checked automatically</span>
+                            <span>Paste your fork URL below. The CI run is checked automatically</span>
                         </li>
                     </ol>
 
@@ -217,8 +217,8 @@ else
                         @if (verificationResult is not null)
                         {
                             <div class="result-strip @(verificationResult.Passed ? "result-pass" : "result-warn")" role="status">
-                                @(verificationResult.Passed ? "✓ PASS" : "✗ NOT YET")
-                                &mdash; @verificationResult.Message
+                                @(verificationResult.Passed ? "✓ PASS:" : "✗ NOT YET:")
+                                @verificationResult.Message
                                 @if (verificationResult.CommitSha is { Length: >= 7 } sha)
                                 {
                                     <span style="color: var(--t3); font-size: 11px; display: block; margin-top: 4px;">

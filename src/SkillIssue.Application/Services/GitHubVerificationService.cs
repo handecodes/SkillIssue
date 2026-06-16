@@ -55,7 +55,7 @@ public partial class GitHubVerificationService(HttpClient httpClient) : IGitHubV
             var ownerId = repoData.Owner?.Id.ToString();
             if (string.IsNullOrEmpty(expectedOwnerGitHubId) || ownerId != expectedOwnerGitHubId)
                 return new VerificationResult(false, null,
-                    "This fork isn't owned by your GitHub account — verify a fork you own.");
+                    "This fork isn't owned by your GitHub account. Verify a fork you own.");
 
             // Step 2: check the latest completed run of OUR challenge workflow on the fork's
             // default branch. Scoping to challenge.yml + the default branch is required: a fork
@@ -73,7 +73,7 @@ public partial class GitHubVerificationService(HttpClient httpClient) : IGitHubV
             // transient API hiccup. Tell the student not to delete/rename it rather than "try again".
             if (runsResponse.StatusCode == HttpStatusCode.NotFound)
                 return new VerificationResult(false, null,
-                    "The challenge workflow (.github/workflows/challenge.yml) wasn't found on your fork's default branch. Don't rename or delete it — re-fork the challenge if needed.");
+                    "The challenge workflow (.github/workflows/challenge.yml) wasn't found on your fork's default branch. Don't rename or delete it. Re-fork the challenge if needed.");
 
             if (!runsResponse.IsSuccessStatusCode)
                 return new VerificationResult(false, null, $"GitHub API returned {(int)runsResponse.StatusCode}. Try again shortly.");
@@ -86,7 +86,7 @@ public partial class GitHubVerificationService(HttpClient httpClient) : IGitHubV
 
             bool passed = latestRun.Conclusion == "success";
             string message = passed
-                ? "All CI checks passed — great fix!"
+                ? "All CI checks passed. Great fix!"
                 : $"CI did not pass. Conclusion: {latestRun.Conclusion ?? "unknown"}. Check the Actions tab in your fork.";
 
             return new VerificationResult(passed, latestRun.HeadSha, message);
@@ -136,7 +136,7 @@ public partial class GitHubVerificationService(HttpClient httpClient) : IGitHubV
                 wait = $" (about {Math.Ceiling(remaining.TotalMinutes)} minute(s))";
         }
 
-        return "Verification is temporarily rate-limited on our side — this isn't a problem with your fix. "
+        return "Verification is temporarily rate-limited on our side. This isn't a problem with your fix. "
              + $"Try again in a few minutes{wait}.";
     }
 

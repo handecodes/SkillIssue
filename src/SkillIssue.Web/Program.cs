@@ -33,7 +33,7 @@ if (string.IsNullOrWhiteSpace(githubPat))
             "(anonymous calls are limited to 60/hour shared by server IP). Set it in Azure app settings: GitHub:PatToken.");
 
     Console.Error.WriteLine(
-        "WARNING: GitHub:PatToken is not configured — fork verification will use ANONYMOUS GitHub API calls " +
+        "WARNING: GitHub:PatToken is not configured. Fork verification will use ANONYMOUS GitHub API calls " +
         "(60 req/hour, shared by IP). Set it via user-secrets for authenticated 5000/hour: " +
         "dotnet user-secrets set \"GitHub:PatToken\" \"<value>\"");
 }
@@ -184,7 +184,7 @@ await using (var db = await factory.CreateDbContextAsync())
     }
     catch (Exception ex)
     {
-        startupLogger.LogCritical(ex, "Database startup failed — the application cannot start.");
+        startupLogger.LogCritical(ex, "Database startup failed. The application cannot start.");
         throw;
     }
 }

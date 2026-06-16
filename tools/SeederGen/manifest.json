@@ -10,7 +10,7 @@
       "bugs": [
         {
           "title": "Pascalize() silently drops digits at word boundaries",
-          "brief": "\"customer name 1\".Pascalize() returns \"CustomerName\" instead of \"CustomerName1\" — the trailing digit silently disappears, and \"customer name $\" loses its \"$\" the same way. Pascalize() capitalises the first letter of each word and joins them, but somewhere in that process every character that isn't a letter is being thrown away instead of preserved. Find where non-letter characters are dropped and keep them.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: Humanizr/Humanizer (MIT).",
+          "brief": "\"customer name 1\".Pascalize() returns \"CustomerName\" instead of \"CustomerName1\": the trailing digit silently disappears, and \"customer name $\" loses its \"$\" the same way. Pascalize() capitalises the first letter of each word and joins them, but somewhere in that process every character that isn't a letter is being thrown away instead of preserved. Find where non-letter characters are dropped and keep them.\n\nFork the repo, fix the bug on your fork's default branch, then push. The existing test suite verifies the result.\n\nSource: Humanizr/Humanizer (MIT).",
           "errorMessage": "Assert.Equal(\"CustomerName1\", \"customer name 1\".Pascalize())\nExpected: CustomerName1\nActual:   CustomerName",
           "reproCommand": "dotnet run --project tests/Humanizer.Tests/Humanizer.Tests.csproj -f net10.0 -p:TargetFrameworks=net10.0 -- --filter-method \"InflectorTests.Pascalize\"",
           "difficulty": "Easy",
@@ -20,15 +20,15 @@
           "hints": [
             {
               "label": "Nudge",
-              "content": "Pascalize() works perfectly for letters-only words like \"customer name\". Try it on a string where the last word starts with a digit, like \"customer name 1\". The digit disappears from the output — why might that be?"
+              "content": "Pascalize() works perfectly for letters-only words like \"customer name\". Try it on a string where the last word starts with a digit, like \"customer name 1\". The digit disappears from the output. Why might that be?"
             },
             {
               "label": "Area",
-              "content": "Look in src/Humanizer/InflectorExtensions.cs. Pascalize() has a fast path for ASCII input — a method called TryPascalizeAscii that walks the string character by character and builds the result in a buffer. Read that loop carefully: which characters get copied into the buffer, and which get skipped?"
+              "content": "Look in src/Humanizer/InflectorExtensions.cs. Pascalize() has a fast path for ASCII input, a method called TryPascalizeAscii that walks the string character by character and builds the result in a buffer. Read that loop carefully: which characters get copied into the buffer, and which get skipped?"
             },
             {
               "label": "File & Line",
-              "content": "In InflectorExtensions.cs, inside TryPascalizeAscii, the loop treats spaces/underscores/hyphens as word separators and then has a guard that skips any character where char.IsLetter(c) is false — so digits and symbols are continue'd past and never written to the buffer. Remove that non-letter guard so every non-separator character is appended."
+              "content": "In InflectorExtensions.cs, inside TryPascalizeAscii, the loop treats spaces/underscores/hyphens as word separators and then has a guard that skips any character where char.IsLetter(c) is false, so digits and symbols are continue'd past and never written to the buffer. Remove that non-letter guard so every non-separator character is appended."
             }
           ]
         }
@@ -54,8 +54,8 @@
       "bugs": [
         {
           "title": "CircuitBreaker hangs the calling thread under concurrent use",
-          "brief": "A ResiliencePipeline with a circuit-breaker strategy causes the application to deadlock. Under concurrent executions the call never returns: no exception is thrown, no timeout fires, and the circuit state never changes. The root cause is not in user code and does not appear in any stack trace.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: App-vNext/Polly (BSD 3-Clause).",
-          "errorMessage": "Expected value to be True, but found False.\n  at ScheduledTaskExecutorTests.ScheduleTask_InlineContinuationDoesNotDeadlock\nThe scheduled task did not complete within the timeout — an inline continuation blocked the executor's own thread.",
+          "brief": "A ResiliencePipeline with a circuit-breaker strategy causes the application to deadlock. Under concurrent executions the call never returns: no exception is thrown, no timeout fires, and the circuit state never changes. The root cause is not in user code and does not appear in any stack trace.\n\nFork the repo, fix the bug on your fork's default branch, then push. The existing test suite verifies the result.\n\nSource: App-vNext/Polly (BSD 3-Clause).",
+          "errorMessage": "Expected value to be True, but found False.\n  at ScheduledTaskExecutorTests.ScheduleTask_InlineContinuationDoesNotDeadlock\nThe scheduled task did not complete within the timeout. An inline continuation blocked the executor's own thread.",
           "reproCommand": "dotnet test test/Polly.Core.Tests/Polly.Core.Tests.csproj -f net8.0 -p:TreatWarningsAsErrors=false -p:CollectCoverage=false --filter \"FullyQualifiedName~ScheduleTask_InlineContinuationDoesNotDeadlock\"",
           "difficulty": "Hard",
           "failingTests": [
@@ -98,7 +98,7 @@
       "bugs": [
         {
           "title": "Proxy merges interface methods that differ only in letter case",
-          "brief": "Castle DynamicProxy can't proxy an interface that declares two methods whose names differ only in letter case — like Abc() and aBc(). Instead of generating a distinct proxy member for each, the generator treats them as the same method and throws while building the proxy. Methods, events, and properties are all affected, because events and properties are backed by methods (add_Abc, get_Abc).\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: castleproject/Core (Apache 2.0).",
+          "brief": "Castle DynamicProxy can't proxy an interface that declares two methods whose names differ only in letter case, like Abc() and aBc(). Instead of generating a distinct proxy member for each, the generator treats them as the same method and throws while building the proxy. Methods, events, and properties are all affected, because events and properties are backed by methods (add_Abc, get_Abc).\n\nFork the repo, fix the bug on your fork's default branch, then push. The existing test suite verifies the result.\n\nSource: castleproject/Core (Apache 2.0).",
           "errorMessage": "Castle.DynamicProxy.DynamicProxyException : Duplicate element: Castle.DynamicProxy.Generators.MetaMethod\n  at CaseSensitivityTestCase.Can_distinguish_differently_cased_methods_during_interception\nProxying an interface with two methods that differ only in case threw instead of generating distinct members.",
           "reproCommand": "dotnet test src/Castle.Core.Tests/Castle.Core.Tests.csproj -f net10.0 -p:TargetFrameworks=net10.0 --filter \"FullyQualifiedName~CaseSensitivityTestCase\"",
           "difficulty": "Medium",
@@ -108,11 +108,11 @@
           "hints": [
             {
               "label": "Nudge",
-              "content": "The proxy fails only when two members' names differ solely in letter case. While collecting the interface's members the generator decides two are \"the same\" and refuses to add the second. What kind of string comparison would treat Abc and aBc as equal — and is that correct for .NET member names?"
+              "content": "The proxy fails only when two members' names differ solely in letter case. While collecting the interface's members the generator decides two are \"the same\" and refuses to add the second. What kind of string comparison would treat Abc and aBc as equal, and is that correct for .NET member names?"
             },
             {
               "label": "Area",
-              "content": "The generator represents each interface member as a meta object — MetaMethod for methods (events and properties are backed by methods too: add_X, get_X). Each meta object has an Equals override used to deduplicate members while building the proxy. Look at how MetaMethod.Equals compares the member Name."
+              "content": "The generator represents each interface member as a meta object, MetaMethod for methods (events and properties are backed by methods too: add_X, get_X). Each meta object has an Equals override used to deduplicate members while building the proxy. Look at how MetaMethod.Equals compares the member Name."
             },
             {
               "label": "File & Line",
@@ -141,8 +141,8 @@
       "isActive": true,
       "bugs": [
         {
-          "title": "Is.SupersetOf() behaves like Is.SubsetOf() — genuine supersets are rejected",
-          "brief": "A collection that clearly contains every element of the expected set should satisfy Is.SupersetOf(expected). Instead the assertion fails for real supersets and passes for subsets — the superset check has quietly become a subset check. Is.SubsetOf() still works correctly, so the two checks behave as mirror images of each other.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: nunit/nunit (MIT).",
+          "title": "Is.SupersetOf() behaves like Is.SubsetOf(): genuine supersets are rejected",
+          "brief": "A collection that clearly contains every element of the expected set should satisfy Is.SupersetOf(expected). Instead the assertion fails for real supersets and passes for subsets: the superset check has quietly become a subset check. Is.SubsetOf() still works correctly, so the two checks behave as mirror images of each other.\n\nFork the repo, fix the bug on your fork's default branch, then push. The existing test suite verifies the result.\n\nSource: nunit/nunit (MIT).",
           "errorMessage": "Expected: superset of < 1, 2, 3, 4, 5 >\n  But was:  < 1, 2, 3, 4, 5, 6 >\n  at NUnit.Framework.Tests.Constraints.CollectionSupersetConstraintTests.SucceedsWithGoodValues\nA collection containing every expected element was reported as not a superset.",
           "reproCommand": "dotnet test src/NUnitFramework/tests/nunit.framework.tests.csproj -c Release -f net8.0 -p:NUnitRuntimeFrameworks=net8.0 --filter \"FullyQualifiedName~CollectionSupersetConstraintTests.SucceedsWithGoodValues\"",
           "difficulty": "Medium",
@@ -152,7 +152,7 @@
           "hints": [
             {
               "label": "Nudge",
-              "content": "Is.SupersetOf() and Is.SubsetOf() are near-mirror images: a superset of X means X has nothing missing from the actual collection; a subset of X means the actual collection has nothing beyond X. Here SupersetOf accepts subsets and rejects genuine supersets — the comparison is being run in the wrong direction. What is the one difference between the two checks?"
+              "content": "Is.SupersetOf() and Is.SubsetOf() are near-mirror images: a superset of X means X has nothing missing from the actual collection; a subset of X means the actual collection has nothing beyond X. Here SupersetOf accepts subsets and rejects genuine supersets. The comparison is being run in the wrong direction. What is the one difference between the two checks?"
             },
             {
               "label": "Area",
@@ -160,7 +160,7 @@
             },
             {
               "label": "File & Line",
-              "content": "In src/NUnitFramework/framework/Constraints/CollectionSupersetConstraint.cs, Matches calls TallyResult(_expected, actual) — that computes the items in actual that aren't in expected, which is a subset test. A superset test needs the items in expected that aren't in actual. Swap the arguments back to TallyResult(actual, _expected)."
+              "content": "In src/NUnitFramework/framework/Constraints/CollectionSupersetConstraint.cs, Matches calls TallyResult(_expected, actual). That computes the items in actual that aren't in expected, which is a subset test. A superset test needs the items in expected that aren't in actual. Swap the arguments back to TallyResult(actual, _expected)."
             }
           ]
         }
@@ -186,7 +186,7 @@
       "bugs": [
         {
           "title": "JToken.FromObject() gives null string properties the wrong token type",
-          "brief": "When you build a JObject with a null string property and convert it with JToken.FromObject(), the null property comes back typed as JTokenType.String instead of JTokenType.Null. Code that checks token.Type == JTokenType.Null to detect missing values silently misses them.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: JamesNK/Newtonsoft.Json (MIT).",
+          "brief": "When you build a JObject with a null string property and convert it with JToken.FromObject(), the null property comes back typed as JTokenType.String instead of JTokenType.Null. Code that checks token.Type == JTokenType.Null to detect missing values silently misses them.\n\nFork the repo, fix the bug on your fork's default branch, then push. The existing test suite verifies the result.\n\nSource: JamesNK/Newtonsoft.Json (MIT).",
           "errorMessage": "Expected: Null\nBut was:  String\n  at Newtonsoft.Json.Tests.Issues.Issue2775.TokenType\nJToken.FromObject() serialised a null string property as JTokenType.String instead of JTokenType.Null.",
           "reproCommand": "dotnet test Src/Newtonsoft.Json.Tests/Newtonsoft.Json.Tests.csproj -f net8.0 -p:TargetFrameworks=net8.0 --filter \"FullyQualifiedName~Issue2775.TokenType\"",
           "difficulty": "Medium",
@@ -200,7 +200,7 @@
             },
             {
               "label": "Area",
-              "content": "JToken.FromObject() serialises the object using a JTokenWriter, which implements JsonWriter. JTokenWriter has individual WriteValue overloads for each primitive type. Look at the string overload in Src/Newtonsoft.Json/Linq/JTokenWriter.cs — does it handle null differently from non-null?"
+              "content": "JToken.FromObject() serialises the object using a JTokenWriter, which implements JsonWriter. JTokenWriter has individual WriteValue overloads for each primitive type. Look at the string overload in Src/Newtonsoft.Json/Linq/JTokenWriter.cs. Does it handle null differently from non-null?"
             },
             {
               "label": "File & Line",
@@ -230,7 +230,7 @@
       "bugs": [
         {
           "title": "SingleInstance() returns a new object on every resolve",
-          "brief": "A type registered with .SingleInstance() should hand back the same shared object every time it is resolved. Instead the container returns a brand-new instance on every Resolve — as if it were registered transient — and, conversely, transient registrations get wrongly shared. The container's instance-sharing decision is inverted.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: autofac/Autofac (MIT).",
+          "brief": "A type registered with .SingleInstance() should hand back the same shared object every time it is resolved. Instead the container returns a brand-new instance on every Resolve (as if it were registered transient), and, conversely, transient registrations get wrongly shared. The container's instance-sharing decision is inverted.\n\nFork the repo, fix the bug on your fork's default branch, then push. The existing test suite verifies the result.\n\nSource: autofac/Autofac (MIT).",
           "errorMessage": "Assert.Same() Failure: Values are not the same instance\n  at Autofac.Specification.Test.Lifetime.SingleInstanceTests.TypeAsSingleInstance\nA SingleInstance() registration returned a different object on each Resolve instead of one shared instance.",
           "reproCommand": "dotnet test test/Autofac.Specification.Test/Autofac.Specification.Test.csproj -f net10.0 --filter \"FullyQualifiedName~SingleInstanceTests.TypeAsSingleInstance\"",
           "difficulty": "Hard",
@@ -240,7 +240,7 @@
           "hints": [
             {
               "label": "Nudge",
-              "content": "SingleInstance() and InstancePerDependency() differ only in whether the container caches and reuses one instance or builds a fresh one each time. Here that decision is backwards: singletons aren't shared and transients are. A resolve flows through a pipeline of middleware steps — which step decides whether to reuse an already-built instance?"
+              "content": "SingleInstance() and InstancePerDependency() differ only in whether the container caches and reuses one instance or builds a fresh one each time. Here that decision is backwards: singletons aren't shared and transients are. A resolve flows through a pipeline of middleware steps. Which step decides whether to reuse an already-built instance?"
             },
             {
               "label": "Area",
@@ -248,7 +248,7 @@
             },
             {
               "label": "File & Line",
-              "content": "In src/Autofac/Core/Resolving/Middleware/SharingMiddleware.cs, the branch that creates and caches a shared instance is guarded by if (sharing == InstanceSharing.None) — that condition is inverted. Shared registrations (SingleInstance, per-scope) are the ones that should get a cached instance. Change the check to if (sharing == InstanceSharing.Shared)."
+              "content": "In src/Autofac/Core/Resolving/Middleware/SharingMiddleware.cs, the branch that creates and caches a shared instance is guarded by if (sharing == InstanceSharing.None), and that condition is inverted. Shared registrations (SingleInstance, per-scope) are the ones that should get a cached instance. Change the check to if (sharing == InstanceSharing.Shared)."
             }
           ]
         }
@@ -274,7 +274,7 @@
       "bugs": [
         {
           "title": "PlusMonths() lands on an invalid end-of-month date (30 February)",
-          "brief": "Adding one month to a month-end date should clamp the day to the last valid day of the destination month — 30 January plus one month is 28 February. Instead LocalDate.PlusMonths() produces an invalid 30 February: the day is clamped against the wrong month's length. Mid-month dates are unaffected, so only month-end arithmetic is wrong.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: nodatime/nodatime (Apache 2.0).",
+          "brief": "Adding one month to a month-end date should clamp the day to the last valid day of the destination month: 30 January plus one month is 28 February. Instead LocalDate.PlusMonths() produces an invalid 30 February: the day is clamped against the wrong month's length. Mid-month dates are unaffected, so only month-end arithmetic is wrong.\n\nFork the repo, fix the bug on your fork's default branch, then push. The existing test suite verifies the result.\n\nSource: nodatime/nodatime (Apache 2.0).",
           "errorMessage": "Expected: Monday, 28 February 2011\nBut was:  Wednesday, 30 February 2011\n  at NodaTime.Test.LocalDateTest.PlusMonth_WithTruncation\nLocalDate.PlusMonths() produced an invalid 30 February instead of clamping to 28 February.",
           "reproCommand": "dotnet test src/NodaTime.Test/NodaTime.Test.csproj -c Release -f net10.0 --filter \"FullyQualifiedName~LocalDateTest.PlusMonth_WithTruncation\"",
           "difficulty": "Medium",
@@ -284,15 +284,15 @@
           "hints": [
             {
               "label": "Nudge",
-              "content": "30 January plus one month should give 28 February, but you get an invalid 30 February. Only month-end dates that don't fit the destination month are wrong — mid-month dates are fine. The day IS being clamped, just against the wrong month. Which month's length should bound the resulting day: the one you started in, or the one you land in?"
+              "content": "30 January plus one month should give 28 February, but you get an invalid 30 February. Only month-end dates that don't fit the destination month are wrong. Mid-month dates are fine. The day IS being clamped, just against the wrong month. Which month's length should bound the resulting day: the one you started in, or the one you land in?"
             },
             {
               "label": "Area",
-              "content": "LocalDate.PlusMonths doesn't do the arithmetic itself — it delegates to MonthsPeriodField, which calls the calendar's YearMonthDayCalculator.AddMonths. For the ISO/Gregorian calendar that is RegularYearMonthDayCalculator.AddMonths. After it works out the destination year and month, it clamps the day of month to a maximum. Look at how that maximum is computed."
+              "content": "LocalDate.PlusMonths doesn't do the arithmetic itself. It delegates to MonthsPeriodField, which calls the calendar's YearMonthDayCalculator.AddMonths. For the ISO/Gregorian calendar that is RegularYearMonthDayCalculator.AddMonths. After it works out the destination year and month, it clamps the day of month to a maximum. Look at how that maximum is computed."
             },
             {
               "label": "File & Line",
-              "content": "In src/NodaTime/Calendars/RegularYearMonthDayCalculator.cs, AddMonths computes int maxDay = GetDaysInMonth(thisYear, thisMonth) — that is the length of the ORIGINAL month (thisYear/thisMonth), so 30 January is clamped against January's 31 days and stays 30. It must clamp against the DESTINATION month: change it to GetDaysInMonth(yearToUse, monthToUse)."
+              "content": "In src/NodaTime/Calendars/RegularYearMonthDayCalculator.cs, AddMonths computes int maxDay = GetDaysInMonth(thisYear, thisMonth), which is the length of the ORIGINAL month (thisYear/thisMonth), so 30 January is clamped against January's 31 days and stays 30. It must clamp against the DESTINATION month: change it to GetDaysInMonth(yearToUse, monthToUse)."
             }
           ]
         }
@@ -313,13 +313,13 @@
       "name": "morelinq/MoreLINQ",
       "gitHubUrl": "https://github.com/handecodes/skillissue-morelinq",
       "language": "C#",
-      "description": "MoreLINQ — extensions to LINQ to Objects. Apache 2.0 licensed.",
+      "description": "MoreLINQ: extensions to LINQ to Objects. Apache 2.0 licensed.",
       "isActive": true,
       "bugs": [
         {
           "title": "AtLeast(n) returns false for a sequence of exactly n elements",
-          "brief": "AtLeast(n) should be true when a sequence has n or more elements — the lower bound is inclusive. Instead a sequence of exactly n elements reports false: 'at least n' has quietly become 'more than n'. The same off-by-one hits the boundaries of AtMost, Exactly, and CountBetween, because all four share one comparison.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: morelinq/MoreLINQ (Apache 2.0).",
-          "errorMessage": "Expected: True\nBut was:  False\n  at MoreLinq.Test.AtLeastTest.AtLeast(Sequence[1], 1)\nAtLeast(1) returned false for a one-element sequence — the inclusive lower bound was treated as exclusive.",
+          "brief": "AtLeast(n) should be true when a sequence has n or more elements. The lower bound is inclusive. Instead a sequence of exactly n elements reports false: 'at least n' has quietly become 'more than n'. The same off-by-one hits the boundaries of AtMost, Exactly, and CountBetween, because all four share one comparison.\n\nFork the repo, fix the bug on your fork's default branch, then push. The existing test suite verifies the result.\n\nSource: morelinq/MoreLINQ (Apache 2.0).",
+          "errorMessage": "Expected: True\nBut was:  False\n  at MoreLinq.Test.AtLeastTest.AtLeast(Sequence[1], 1)\nAtLeast(1) returned false for a one-element sequence. The inclusive lower bound was treated as exclusive.",
           "reproCommand": "dotnet test MoreLinq.Test/MoreLinq.Test.csproj -c Release -f net8.0 --filter \"FullyQualifiedName~AtLeastTest.AtLeast\"",
           "difficulty": "Medium",
           "failingTests": [
@@ -328,15 +328,15 @@
           "hints": [
             {
               "label": "Nudge",
-              "content": "AtLeast(n) should be true when the sequence has n or more elements — the boundary is inclusive. Right now a sequence of exactly n elements reports false: the 'or more' boundary has become 'strictly more'. AtMost, Exactly, and CountBetween are wrong at their boundaries too. What single comparison do all four operators share?"
+              "content": "AtLeast(n) should be true when the sequence has n or more elements. The boundary is inclusive. Right now a sequence of exactly n elements reports false: the 'or more' boundary has become 'strictly more'. AtMost, Exactly, and CountBetween are wrong at their boundaries too. What single comparison do all four operators share?"
             },
             {
               "label": "Area",
-              "content": "There is no AtLeast.cs — AtLeast, AtMost, Exactly, and CountBetween all live in MoreLinq/CountMethods.cs, and each delegates to a private helper, QuantityIterator(source, limit, min, max), which counts the elements and returns whether the count falls within [min, max]. The bug is in that one shared return expression, not in any individual operator."
+              "content": "There is no AtLeast.cs. AtLeast, AtMost, Exactly, and CountBetween all live in MoreLinq/CountMethods.cs, and each delegates to a private helper, QuantityIterator(source, limit, min, max), which counts the elements and returns whether the count falls within [min, max]. The bug is in that one shared return expression, not in any individual operator."
             },
             {
               "label": "File & Line",
-              "content": "In MoreLinq/CountMethods.cs, QuantityIterator ends with return count > min && count <= max; — the lower bound uses > instead of >=, so a count exactly equal to min (AtLeast(n) on n elements, or Exactly(n) on n) is rejected. Change it to return count >= min && count <= max;."
+              "content": "In MoreLinq/CountMethods.cs, QuantityIterator ends by returning count > min && count <= max. The lower bound uses > instead of >=, so a count exactly equal to min (AtLeast(n) on n elements, or Exactly(n) on n) is rejected. Change it to return count >= min && count <= max;."
             }
           ]
         }
@@ -357,12 +357,12 @@
       "name": "dotnet-state-machine/stateless",
       "gitHubUrl": "https://github.com/handecodes/skillissue-stateless",
       "language": "C#",
-      "description": "Stateless — a hierarchical state machine library for .NET. Apache 2.0 licensed.",
+      "description": "Stateless: a hierarchical state machine library for .NET. Apache 2.0 licensed.",
       "isActive": true,
       "bugs": [
         {
           "title": "Entering a substate directly from its superstate skips the substate's OnEntry",
-          "brief": "In a hierarchical state machine, transitioning from a parent (super)state straight into one of its child (sub)states should run the child's OnEntry action. Instead the child's OnEntry is silently skipped. Entering the same substate from an unrelated outside state works fine — only the transition down from the immediate superstate is wrong.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: dotnet-state-machine/stateless (Apache 2.0).",
+          "brief": "In a hierarchical state machine, transitioning from a parent (super)state straight into one of its child (sub)states should run the child's OnEntry action. Instead the child's OnEntry is silently skipped. Entering the same substate from an unrelated outside state works fine. Only the transition down from the immediate superstate is wrong.\n\nFork the repo, fix the bug on your fork's default branch, then push. The existing test suite verifies the result.\n\nSource: dotnet-state-machine/stateless (Apache 2.0).",
           "errorMessage": "Assert.True() Failure\nExpected: True\nActual:   False\n  at Stateless.Tests.StateRepresentationFixture.WhenTransitioningFromSubToSuperstate_SubstateEntryActionsExecuted\nThe substate's OnEntry action did not run when the substate was entered from its superstate.",
           "reproCommand": "dotnet test test/Stateless.Tests/Stateless.Tests.csproj -c Release -f net9.0 --filter \"FullyQualifiedName~StateRepresentationFixture.WhenTransitioningFromSubToSuperstate_SubstateEntryActionsExecuted\"",
           "difficulty": "Hard",
@@ -372,7 +372,7 @@
           "hints": [
             {
               "label": "Nudge",
-              "content": "Transitioning from a parent state straight into one of its child states never runs the child's OnEntry — yet entering that same child from an unrelated outside state works. The code that decides whether to run a state's entry actions is judging where the transition came from incorrectly: it thinks the source is already 'inside' the state being entered when it isn't."
+              "content": "Transitioning from a parent state straight into one of its child states never runs the child's OnEntry, yet entering that same child from an unrelated outside state works. The code that decides whether to run a state's entry actions is judging where the transition came from incorrectly: it thinks the source is already 'inside' the state being entered when it isn't."
             },
             {
               "label": "Area",
@@ -380,7 +380,7 @@
             },
             {
               "label": "File & Line",
-              "content": "In src/Stateless/StateRepresentation.cs, Enter guards entry execution with else if (!IsIncludedIn(transition.Source)). IsIncludedIn walks UP the hierarchy, so when you enter a substate whose source is its superstate (an ancestor), it wrongly decides the source is 'inside' the substate and skips the entry actions. Enter must instead ask whether the source is within the substate's own subtree — the descendant direction. Change it to else if (!Includes(transition.Source))."
+              "content": "In src/Stateless/StateRepresentation.cs, Enter guards entry execution with else if (!IsIncludedIn(transition.Source)). IsIncludedIn walks UP the hierarchy, so when you enter a substate whose source is its superstate (an ancestor), it wrongly decides the source is 'inside' the substate and skips the entry actions. Enter must instead ask whether the source is within the substate's own subtree, the descendant direction. Change it to else if (!Includes(transition.Source))."
             }
           ]
         }
@@ -401,12 +401,12 @@
       "name": "kthompson/glob",
       "gitHubUrl": "https://github.com/handecodes/skillissue-glob",
       "language": "C#",
-      "description": "GlobExpressions — a .NET library for matching file paths against glob patterns. MIT licensed.",
+      "description": "GlobExpressions: a .NET library for matching file paths against glob patterns. MIT licensed.",
       "isActive": true,
       "bugs": [
         {
           "title": "A * wildcard matches at most a single character",
-          "brief": "The * wildcard should match a whole path segment of any length, but it only matches names of zero or one character: the glob folder/*.txt matches folder/a.txt yet fails to match folder/bigfile.txt. Longer names slip through. Single-character and empty matches still work, which makes it easy to miss.\n\nFork the repo, fix the bug on your fork's default branch, then push — the existing test suite verifies the result.\n\nSource: kthompson/glob (MIT).",
+          "brief": "The * wildcard should match a whole path segment of any length, but it only matches names of zero or one character: the glob folder/*.txt matches folder/a.txt yet fails to match folder/bigfile.txt. Longer names slip through. Single-character and empty matches still work, which makes it easy to miss.\n\nFork the repo, fix the bug on your fork's default branch, then push. The existing test suite verifies the result.\n\nSource: kthompson/glob (MIT).",
           "errorMessage": "Assert.True() Failure\nExpected: True\nActual:   False\n  at GlobExpressions.Tests.GlobTests.CanMatchSingleFileOnExtension\nThe glob folder/*.txt failed to match folder/bigfile.txt because * matched only one character.",
           "reproCommand": "dotnet test test/Glob.Tests/Glob.Tests.csproj -c Release -f net8.0 -p:CollectCoverage=false --filter \"FullyQualifiedName~GlobTests.CanMatchSingleFileOnExtension\"",
           "difficulty": "Medium",
@@ -416,15 +416,15 @@
           "hints": [
             {
               "label": "Nudge",
-              "content": "A * segment should match a path segment of any length, but it only matches names of zero or one character — folder/*.txt matches folder/a.txt yet fails on folder/bigfile.txt. The matcher consumes a single character for the *, then moves on, instead of letting * keep consuming. The bug is in how it 'moves on'."
+              "content": "A * segment should match a path segment of any length, but it only matches names of zero or one character: folder/*.txt matches folder/a.txt yet fails on folder/bigfile.txt. The matcher consumes a single character for the *, then moves on, instead of letting * keep consuming. The bug is in how it 'moves on'."
             },
             {
               "label": "Area",
-              "content": "Matching is performed by the recursive Matcher.MatchesSubSegment. For a * (StringWildcard) it tries two branches: match zero characters (advance past the *), or consume one more character and recurse. The 'consume one more' branch is what lets * absorb an arbitrary number of characters — but only if it recurses back into the SAME * rather than the next sub-segment."
+              "content": "Matching is performed by the recursive Matcher.MatchesSubSegment. For a * (StringWildcard) it tries two branches: match zero characters (advance past the *), or consume one more character and recurse. The 'consume one more' branch is what lets * absorb an arbitrary number of characters, but only if it recurses back into the SAME * rather than the next sub-segment."
             },
             {
               "label": "File & Line",
-              "content": "In src/Glob/Matcher.cs, the StringWildcard case's 'one or more' branch recurses with nextSegment, which advances past the * after a single character — so * can match at most one char. To let * keep consuming, it must re-enter the same wildcard: pass segmentIndex (the current *) instead of nextSegment."
+              "content": "In src/Glob/Matcher.cs, the StringWildcard case's 'one or more' branch recurses with nextSegment, which advances past the * after a single character, so * can match at most one char. To let * keep consuming, it must re-enter the same wildcard: pass segmentIndex (the current *) instead of nextSegment."
             }
           ]
         }
