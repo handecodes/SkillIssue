@@ -11,9 +11,11 @@ Live at **[skillissue.se](https://skillissue.se)**
 
 ## What it is
 
-9 challenges across 6 real open-source .NET repositories. You get a failing test, a brief description of the symptom (no location given), and three tiered hints. Fork the repo, find the bug, fix it, push. CI on your fork verifies the result.
+A debugging trainer built on real .NET open-source libraries. School and tutorials teach you to write code from a blank file. They do not teach you to open a large codebase you have never seen, track down the one thing that is broken, and fix it without disturbing everything around it. That second skill is most of the job, and almost nobody practices it before they need it.
 
-Bugs are sourced from real fix commits in MIT/Apache/BSD-licensed .NET libraries. Not generated, not simplified.
+10 challenges across 10 real open-source .NET repositories. You get a failing test, a short description of the symptom with no location given, and three tiered hints. Fork the repo, find the bug, fix it, push. CI on your fork verifies the result.
+
+Each bug is a real defect planted in a real library, caught by a test that already lives in that library's suite. Nothing is generated, nothing is simplified.
 
 ---
 
@@ -121,25 +123,29 @@ Dependency direction: `Web` -> `Application` -> `Data` -> `Domain`
 
 **No scale-to-zero handling.** Blazor Server circuits need a warm host. Cold-start latency is noticeable and not handled gracefully.
 
-**Challenge sourcing constraint.** Challenge sourcing currently requires repositories where the failing test was committed separately before the fix. A platform-fork model is in development to remove this constraint and expand the challenge library significantly.
-
 ---
 
 ## Bug sources
 
-| Library | License | Repo |
-|---------|---------|------|
+| Library | License | Source repo |
+|---------|---------|-------------|
 | Humanizer | MIT | [Humanizr/Humanizer](https://github.com/Humanizr/Humanizer) |
-| Castle.Core | Apache 2.0 | [castleproject/Core](https://github.com/castleproject/Core) |
-| NUnit | MIT | [nunit/nunit](https://github.com/nunit/nunit) |
 | Polly | BSD 3-Clause | [App-vNext/Polly](https://github.com/App-vNext/Polly) |
-| Autofac | MIT | [autofac/Autofac](https://github.com/autofac/Autofac) |
+| Castle.Core | Apache 2.0 | [castleproject/Core](https://github.com/castleproject/Core) |
 | Newtonsoft.Json | MIT | [JamesNK/Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) |
+| Autofac | MIT | [autofac/Autofac](https://github.com/autofac/Autofac) |
+| NUnit | MIT | [nunit/nunit](https://github.com/nunit/nunit) |
+| Noda Time | Apache 2.0 | [nodatime/nodatime](https://github.com/nodatime/nodatime) |
+| MoreLINQ | Apache 2.0 | [morelinq/MoreLINQ](https://github.com/morelinq/MoreLINQ) |
+| Stateless | Apache 2.0 | [dotnet-state-machine/stateless](https://github.com/dotnet-state-machine/stateless) |
+| GlobExpressions | MIT | [kthompson/glob](https://github.com/kthompson/glob) |
 
 ---
 
 ## How challenges are sourced
 
-Every challenge traces back to a real pull request in an open-source .NET repository. The sourcing process has one hard structural requirement: the PR must contain a test-only commit before the fix commit. That first commit adds a failing test that reproduces the bug without touching any production code. The second commit introduces the fix. Students check out the first commit, so they start with a test that fails and a codebase in the state the original author faced.
+Each challenge is a platform-maintained fork of a real .NET library, kept under `handecodes/skillissue-*`. The bug is planted on the fork's default branch as a small, localized source change, and a scoped `challenge.yml` workflow runs only the test that catches it. Because that test already exists in the library, the default branch is genuinely failing from the start.
+
+You fork the challenge repo, enable Actions on your fork, fix the bug on the default branch, and push. The scoped CI run is what verifies the fix. There is no commit to check out. You work in your own environment, the way you would on a real project. The reasoning behind this model, and what it replaced, is recorded in [ADR-008](docs/adr/ADR-008.md).
 
 Difficulty reflects how hard the bug is to locate, not how complex the fix is. A one-character fix can be Hard if reproducing the symptom requires reading across multiple abstraction layers. A multi-file change can be Easy if the test failure message points directly at the problem. Tiered hints are calibrated to the navigation challenge, not the implementation challenge.
