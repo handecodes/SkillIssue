@@ -73,7 +73,7 @@ After forking and connecting the repo to Codecov, add `CODECOV_TOKEN` as a repos
 dotnet run --project src/SkillIssue.Web --launch-profile https
 ```
 
-The database is created and seeded on first run. Open `https://localhost:5239`.
+The database is created and seeded on first run. Open `https://localhost:7239`.
 
 **Tests**
 

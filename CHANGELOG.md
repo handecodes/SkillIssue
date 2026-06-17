@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.2.0] - Unreleased
+
+### Added
+- Challenge library expanded to ten challenges across ten distinct domains. Challenges 7 through 10 added: Noda Time (end-of-month clamp), MoreLINQ (quantifier off-by-one), Stateless (superstate-to-substate entry skip), GlobExpressions (single-character wildcard match)
+- Lantern favicon (black field, multi-resolution 16/32/48) replacing the placeholder icon
+- ADR-008 recording the platform-fork challenge construction model
+
+### Changed
+- Challenge sourcing migrated to a platform-fork model: each challenge is a maintained fork (`handecodes/skillissue-*`) with the bug planted on the fork's default branch and a scoped `challenge.yml` that runs only the target test. Students fork, enable Actions, fix on the default branch, and push. This replaces the previous check-out-the-first-commit model. See [ADR-008](docs/adr/ADR-008.md), which supersedes ADR-003
+- Removed em dashes from all user-facing text (verifier messages, challenge briefs and hints, instructions)
+
+### Fixed
+- Fork verification now scopes to the `challenge.yml` workflow on the fork's default branch instead of the repo-wide latest run. A fork inherits the upstream's own workflows, so a repo-wide query could both falsely pass an unfixed fork and falsely fail a correct one
+
+### Docs
+- ADR-003 marked superseded by ADR-008; its body is preserved as a point-in-time record
+- Design reference PNGs excluded from version control and the Docker build context
+
+---
+
 ## [1.1.0] - 2026-06-11
 
 ### Added

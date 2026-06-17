@@ -18,6 +18,6 @@ We will acknowledge receipt within 72 hours and follow up with an assessment of 
 
 ## Out of scope
 
-The challenge repos themselves (Humanizer, Polly, Serilog, NodaTime, Newtonsoft.Json) are external open-source projects maintained by their own teams. Vulnerabilities in those repos should be reported to their maintainers, not here.
+The upstream open-source repositories that challenges are sourced from are external projects maintained by their own teams. Vulnerabilities in those repositories should be reported to their maintainers, not here.
 
 Findings that require physical access to the server, social engineering, or are limited to self-XSS are out of scope.

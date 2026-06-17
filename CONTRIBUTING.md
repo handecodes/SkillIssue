@@ -2,17 +2,16 @@
 
 ## Suggesting a new challenge
 
+Challenges are built as platform-maintained forks, not sourced from upstream commit history. The construction and verification model is recorded in [ADR-008](docs/adr/ADR-008.md); read it before suggesting a challenge.
+
 Open a GitHub issue with:
 
-- The GitHub URL of the repo (MIT, Apache 2.0, or BSD licensed; GPL and copyleft are not accepted)
-- The specific PR link that introduced the fix
-- The commit SHA of the test-only commit within that PR: the commit that adds the failing test and nothing else. This is a hard requirement. There must be a commit in the PR that touches only test files, with the fix arriving in a later commit.
-- The name of the failing test at that test-only commit
+- The GitHub URL of the upstream repo (MIT, Apache 2.0, or BSD licensed; GPL and copyleft are not accepted)
+- The bug you have in mind: a small, localized, single-file source defect that a real test already present in the repo catches at current main
+- The fully qualified name of that catching test
 - A brief note on why the bug is hard to locate: the symptom should not obviously point to the fix location
 
-Bugs are accepted if they meet the criteria in [ADR-003](docs/adr/ADR-003.md): real fix commit, test-only commit preceding the fix, isolated failing test, misleading symptom, navigable in three tiered hints.
-
-If the PR you want to submit combines the test and fix in a single commit, it does not currently qualify. A platform-fork model is the intended future path for expanding the challenge library beyond this structural constraint. It is not yet implemented.
+A good candidate is a behavioral bug a student can grasp (not plumbing, performance, or analyzer noise), fixable in one file, with a misleading symptom that is navigable in three tiered hints. From there the challenge is built as a fork with the bug planted on the default branch, per ADR-008.
 
 ## Reporting an app bug
 
@@ -26,7 +25,7 @@ For security issues, do not use a public issue. See [SECURITY.md](SECURITY.md).
 
 - .NET 10 SDK
 - A GitHub OAuth app (create one at github.com/settings/developers)
-  - Callback URL: `https://localhost:5239/signin-github`
+  - Callback URL: `https://localhost:7239/signin-github`
 
 **Steps**
 
