@@ -28,7 +28,7 @@ tests/
 
 # Docs, design assets, and session data
 *.md
-design-reference.png
+*-reference.png
 .claude/
 
 # Docker files themselves (no value copying them into the image)
