@@ -21,7 +21,13 @@ Each bug is a real defect planted in a real library, caught by a test that alrea
 
 ## Screenshots
 
-_To be added after deploy._
+![A Skill Issue challenge page showing the failing test, symptom, hints, and fork instructions](docs/screenshots/challenge-page.png)
+
+_A challenge: the failing test, the symptom with no location given, tiered hints, and fork-to-verify instructions._
+
+![A green PASS verification result after a fix is pushed](docs/screenshots/verify-pass.png)
+
+_Push your fix and the scoped CI run on your fork confirms it._
 
 ---
 
